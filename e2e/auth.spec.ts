@@ -39,6 +39,22 @@ test.describe("المصادقة", () => {
     await expect(page.getByRole("heading", { name: "إنشاء شركة جديدة" })).toBeVisible();
   });
 
+  test("المستخدم الجديد بلا شركة يرى حالة فارغة بدل خطأ خادم", async ({ page }) => {
+    const email = `empty-${Date.now()}@example.com`;
+    await page.goto("/register");
+    await page.getByLabel("الاسم الكامل").fill("مستخدم بلا شركة");
+    await page.getByLabel("البريد الإلكتروني").fill(email);
+    await page.getByLabel("كلمة المرور").fill("Test1234!");
+    await page.getByRole("button", { name: "إنشاء الحساب" }).click();
+    await expect(page).toHaveURL(/\/companies\/new/);
+
+    for (const path of ["/dashboard", "/trial-balance", "/statements", "/reports"]) {
+      await page.goto(path);
+      await expect(page.getByText("لا توجد شركة مرتبطة بحسابك بعد")).toBeVisible();
+      await expect(page.getByText(/تعذّر تحميل هذه الصفحة/)).toHaveCount(0);
+    }
+  });
+
   test("ترفض كلمة مرور لا تحقق الشروط", async ({ page }) => {
     await page.goto("/register");
     await page.getByLabel("الاسم الكامل").fill("مستخدم اختبار");
