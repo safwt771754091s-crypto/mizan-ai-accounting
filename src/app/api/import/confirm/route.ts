@@ -5,6 +5,7 @@ import { parseWorkbook } from "@/lib/import/parse";
 import { schemaFor } from "@/lib/import/datasets";
 import { validateRows } from "@/lib/import/validate";
 import { buildImportPlan } from "@/lib/import/plan";
+import { checkPostableEntries } from "@/lib/import/guard";
 import { detectFileKind, sha256, validateFileSignature } from "@/lib/import/checksum";
 import { ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES } from "@/lib/supabase/config";
 import { importConfirmSchema } from "@/lib/validation/schemas";
@@ -119,6 +120,23 @@ export async function POST(request: Request) {
           error: "لا يمكن الاستيراد لوجود أخطاء يجب تصحيحها أولاً.",
           issues: blocking.slice(0, 25),
           summary: plan.summary,
+        },
+        { status: 422 },
+      );
+    }
+
+    const postingIssues = checkPostableEntries(plan.entries);
+    if (postingIssues.length) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: "لا يمكن ترحيل قيود غير صالحة إلى قاعدة البيانات.",
+          issues: postingIssues.slice(0, 25).map((issue) => ({
+            row: 0,
+            code: issue.code,
+            level: "error",
+            message: issue.message,
+          })),
         },
         { status: 422 },
       );

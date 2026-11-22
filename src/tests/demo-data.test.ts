@@ -97,4 +97,24 @@ describe("بيانات العرض التجريبية", () => {
     );
     expect(months.size).toBe(12);
   });
+
+  it("تطابق عملة كل قيد مع عملة شركته", () => {
+    for (const company of companies) {
+      const currencies = new Set(data[company.id].entries.map((entry) => entry.currency));
+      expect([...currencies]).toEqual([company.currency]);
+    }
+  });
+
+  it("تُعد قوائم متوازنة للشركات السليمة في البيانات التجريبية", () => {
+    for (const id of ["co-nakheel", "co-ufuq"]) {
+      const company = companies.find((item) => item.id === id)!;
+      const balance = buildBalanceSheet(ledgerFor(id), {
+        from: company.fiscalYearStart,
+        to: company.fiscalYearEnd,
+        periodStart: company.fiscalYearStart,
+      });
+      expect(balance.balanced).toBe(true);
+      expect(balance.difference).toBe(0);
+    }
+  });
 });

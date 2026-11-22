@@ -258,7 +258,9 @@ export interface AuditFinding {
     | "posting"
     | "documentation"
     | "duplicate"
-    | "anomaly";
+    | "anomaly"
+    | "currency"
+    | "statements";
   accountCode?: string | null;
   accountName?: string | null;
   entryNumber?: string | null;

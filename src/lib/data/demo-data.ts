@@ -71,6 +71,7 @@ function mulberry32(seed: number) {
 interface DemoConfig {
   companyId: string;
   year: number;
+  currency: string;
   seed: number;
   baseMonthlySales: number;
   cogsRate: number;
@@ -119,7 +120,7 @@ function round(value: number): number {
 function makeEntries(config: DemoConfig): JournalEntry[] {
   const entries: JournalEntry[] = [];
   const random = mulberry32(config.seed);
-  const { companyId, year, opening } = config;
+  const { companyId, year, currency: companyCurrency, opening } = config;
 
   const push = (
     key: string,
@@ -137,7 +138,7 @@ function makeEntries(config: DemoConfig): JournalEntry[] {
       description,
       source: extra.source ?? "manual",
       status: extra.status ?? "posted",
-      currency: extra.currency ?? "SAR",
+      currency: extra.currency ?? companyCurrency,
       reference: extra.reference ?? null,
       ...extra,
       lines: lines.map((line, index) => ({
@@ -561,6 +562,7 @@ export function buildDemoData(): Record<string, CompanyData> {
     entries: makeEntries({
       companyId: "co-nakheel",
       year: 2025,
+      currency: "SAR",
       seed: 20250101,
       baseMonthlySales: 180000,
       cogsRate: 0.55,
@@ -605,6 +607,7 @@ export function buildDemoData(): Record<string, CompanyData> {
     entries: makeEntries({
       companyId: "co-ufuq",
       year: 2025,
+      currency: "AED",
       seed: 777001,
       baseMonthlySales: 95000,
       cogsRate: 0.62,
@@ -647,6 +650,7 @@ export function buildDemoData(): Record<string, CompanyData> {
     entries: makeEntries({
       companyId: "co-rakaz",
       year: 2025,
+      currency: "SAR",
       seed: 99003,
       baseMonthlySales: 42000,
       cogsRate: 0.6,

@@ -48,7 +48,10 @@ export function toMoney(raw: unknown): Decimal {
   s = s.replace(/[\u200e\u200f\u061c\u00a0\u202f]/g, " ");
   s = s.replace(/[٬،]/g, ",").replace(/٫/g, ".");
   // إزالة رموز العملات والحروف
+  // رموز عملات تحتوي نقطة (ر.س، د.إ، ج.م) تترك فاصلاً بادئاً/منتهياً بعد إزالة الحروف
+  const hadSymbols = /[^\d.,+\-()\s]/.test(s);
   s = s.replace(/[^\d.,+\-]/g, "").trim();
+  if (hadSymbols) s = s.replace(/^[.,]+/, "").replace(/[.,]+$/, "");
   if (s.startsWith("-")) { negative = true; s = s.slice(1); }
   if (s.endsWith("-")) { negative = true; s = s.slice(0, -1); }
   s = s.replace(/\+/g, "");
@@ -65,7 +68,9 @@ export function toMoney(raw: unknown): Decimal {
     s = isThousands ? parts.join("") : s.replace(",", ".");
   } else if (lastDot >= 0) {
     const parts = s.split(".");
-    if (parts.length > 2) s = parts.slice(0, -1).join("") + "." + parts[parts.length - 1];
+    const allThousands = parts.length > 2 && parts.slice(1).every((part) => part.length === 3);
+    if (allThousands) s = parts.join("");
+    else if (parts.length > 2) s = parts.slice(0, -1).join("") + "." + parts[parts.length - 1];
   }
 
   if (!/^-?\d*(\.\d*)?$/.test(s) || s === "" || s === "-" || s === ".") return new Decimal(0);
