@@ -1,4 +1,4 @@
-# البنية المعمارية — Mizan AI
+# البنية المعمارية — RAKAZ AI
 
 ## 1. نظرة عامة
 
@@ -40,7 +40,7 @@ Next.js 16 App Router  ── proxy.ts (حماية المسارات)
 
 `src/lib/data/repository.ts` يعرّف واجهة مجردة، وينفّذها:
 
-- `store.ts` + `demo-data.ts`: تخزين JSON محلي في `.mizan-data/demo-store.json`.
+- `store.ts` + `demo-data.ts`: تخزين JSON محلي في `.rakaz-data/demo-store.json`.
   كل كتابة تُسلسل عبر طابور، والقراءة تتحقق من بصمة الملف (mtime + size) حتى لا تبقى نسخة
   قديمة في الذاكرة بين مسار الصفحات ومسار الـ API.
 - `supabase-repository.ts`: تنفيذ SQL عبر Supabase مع تمرير جلسة المستخدم لتفعيل RLS.
@@ -48,7 +48,7 @@ Next.js 16 App Router  ── proxy.ts (حماية المسارات)
 اختيار الوضع في `src/lib/supabase/config.ts`:
 
 ```text
-MIZAN_DATA_MODE = demo | supabase
+RAKAZ_DATA_MODE = demo | supabase
 إن لم يُحدد: supabase إذا وُجدت NEXT_PUBLIC_SUPABASE_URL و ANON_KEY، وإلا demo.
 ```
 

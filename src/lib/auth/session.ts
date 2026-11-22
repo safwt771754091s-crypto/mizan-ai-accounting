@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from "node:crypto";
 import { cookies } from "next/headers";
 
-export const SESSION_COOKIE = "mizan_session";
+export const SESSION_COOKIE = "rakaz_session";
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 
 interface SessionPayload {
@@ -10,10 +10,10 @@ interface SessionPayload {
 }
 
 function secret(): string {
-  const value = process.env.MIZAN_DEMO_SESSION_SECRET;
+  const value = process.env.RAKAZ_DEMO_SESSION_SECRET ?? process.env.MIZAN_DEMO_SESSION_SECRET;
   if (value && value.length >= 16) return value;
-  // قيمة تطوير فقط. في الإنتاج يجب ضبط MIZAN_DEMO_SESSION_SECRET.
-  return "mizan-demo-development-secret-change-me";
+  // قيمة تطوير فقط. في الإنتاج يجب ضبط RAKAZ_DEMO_SESSION_SECRET.
+  return "rakaz-demo-development-secret-change-me";
 }
 
 function sign(payload: string): string {

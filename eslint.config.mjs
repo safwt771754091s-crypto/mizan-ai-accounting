@@ -11,7 +11,7 @@ const config = [
       "coverage/**",
       "playwright-report/**",
       "test-results/**",
-      ".mizan-data/**",
+      ".rakaz-data/**",
       "next-env.d.ts",
     ],
   },

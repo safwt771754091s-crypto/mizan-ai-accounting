@@ -8,7 +8,7 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 
 <!-- END:nextjs-agent-rules -->
 
-# Mizan AI — دليل العمل داخل المستودع
+# RAKAZ AI — دليل العمل داخل المستودع
 
 ## ما هذا المشروع
 
@@ -44,9 +44,9 @@ npm run db:seed      # إعادة بناء البيانات التجريبية
 
 ## البيانات
 
-- الوضع الافتراضي Demo: `.mizan-data/demo-store.json` (مستثنى من Git).
+- الوضع الافتراضي Demo: `.rakaz-data/demo-store.json` (مستثنى من Git).
   القراءة تتحقق من بصمة الملف، والكتابة تُسلسل — لا تُلغِ هذا السلوك.
-- وضع Supabase: `MIZAN_DATA_MODE=supabase` مع متغيرات `NEXT_PUBLIC_SUPABASE_*`.
+- وضع Supabase: `RAKAZ_DATA_MODE=supabase` مع متغيرات `NEXT_PUBLIC_SUPABASE_*`.
 - لا تُضف بيانات عملاء حقيقية إلى الاختبارات أو البيانات التجريبية.
 
 ## الأمن

@@ -1,4 +1,4 @@
--- Mizan AI — 0002: القيود والملفات والاستيراد ونتائج التحليل
+-- RAKAZ AI — 0002: القيود والملفات والاستيراد ونتائج التحليل
 create table if not exists public.journal_entries (
   id uuid primary key default gen_random_uuid(),
   company_id uuid not null references public.companies (id) on delete cascade,

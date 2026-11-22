@@ -113,8 +113,8 @@ export function AppShell({
           <Scale className="h-5 w-5" />
         </div>
         <div>
-          <p className="text-base font-bold text-white">ميزان</p>
-          <p className="text-[10px] tracking-widest text-teal-200/80">MIZAN AI</p>
+          <p className="text-base font-bold text-white">ركاز</p>
+          <p className="text-[10px] tracking-widest text-teal-200/80">RAKAZ AI</p>
         </div>
       </div>
 
@@ -232,9 +232,9 @@ export function AppShell({
               <Menu className="h-4 w-4" />
             </button>
             <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-ink">{current?.name ?? "Mizan AI"}</p>
+              <p className="truncate text-sm font-bold text-ink">{current?.name ?? "RAKAZ AI"}</p>
               <p className="truncate text-[10px] text-muted">
-                {current ? `${current.activityType} · ${current.currency}` : "منصة ميزان الذكية للتحليل المحاسبي"}
+                {current ? `${current.activityType} · ${current.currency}` : "ركاز — منصة الذكاء المحاسبي والمالي"}
               </p>
             </div>
           </div>
@@ -261,7 +261,7 @@ export function AppShell({
         <main className="mx-auto w-full max-w-[1400px] flex-1 px-4 py-6 lg:px-8 lg:py-8">{children}</main>
 
         <footer className="border-t border-line px-4 py-4 text-center text-[10px] leading-relaxed text-muted lg:px-8 no-print">
-          Mizan AI — منصة تحليل محاسبي مساعدة. النتائج والتقارير لا تُعد رأياً قانونياً أو تقرير مراجعة معتمداً.
+          RAKAZ AI — منصة تحليل محاسبي مساعدة. النتائج والتقارير لا تُعد رأياً قانونياً أو تقرير مراجعة معتمداً.
         </footer>
       </div>
     </div>

@@ -13,7 +13,8 @@ export function LoginForm({ next }: { next: string }) {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-brand-950">تسجيل الدخول</h1>
+      <p className="text-[11px] font-bold tracking-wide text-teal-700">ركاز — منصة الذكاء المحاسبي والمالي</p>
+      <h1 className="mt-1 text-2xl font-bold text-brand-950">تسجيل الدخول</h1>
       <p className="mt-1.5 text-sm text-muted">أدخل بيانات حسابك للوصول إلى شركاتك وتقاريرك.</p>
 
       <form action={formAction} className="mt-6 space-y-4">
@@ -40,19 +41,19 @@ export function LoginForm({ next }: { next: string }) {
           <p className="flex items-center justify-between gap-3">
             <span>المحاسب / المالك</span>
             <code dir="ltr" className="rounded bg-surface px-1.5 py-0.5 font-mono text-[11px] text-brand-900">
-              demo@mizan.ai / Demo1234!
+              demo@rakaz.ai / Demo1234!
             </code>
           </p>
           <p className="flex items-center justify-between gap-3">
             <span>المراجع</span>
             <code dir="ltr" className="rounded bg-surface px-1.5 py-0.5 font-mono text-[11px] text-brand-900">
-              auditor@mizan.ai / Demo1234!
+              auditor@rakaz.ai / Demo1234!
             </code>
           </p>
           <p className="flex items-center justify-between gap-3">
             <span>مشاهد</span>
             <code dir="ltr" className="rounded bg-surface px-1.5 py-0.5 font-mono text-[11px] text-brand-900">
-              viewer@mizan.ai / Demo1234!
+              viewer@rakaz.ai / Demo1234!
             </code>
           </p>
         </div>
