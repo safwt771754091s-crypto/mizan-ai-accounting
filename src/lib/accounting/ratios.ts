@@ -96,10 +96,6 @@ export function buildFinancialAnalysis(
   const closingPayables = dec(balance.payables);
 
   const avg = (a: Decimal, b: Decimal) => a.plus(b).div(2);
-  const avgInventory = avg(openingInventory, closingInventory);
-  const avgReceivables = avg(openingReceivables, closingReceivables);
-  const avgPayables = avg(openingPayables, closingPayables);
-
   const currentAssets = dec(balance.totalCurrentAssets);
   const currentLiabilities = dec(balance.totalCurrentLiabilities);
   const totalAssets = dec(balance.totalAssets);

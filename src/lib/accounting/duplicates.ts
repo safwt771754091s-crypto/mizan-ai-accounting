@@ -65,12 +65,19 @@ function scorePair(
   }
 
   const dayDiff = daysBetween(a.date, b.date);
+  const sameReference = Boolean(refA && refB && normalizeArabic(refA) === normalizeArabic(refB));
   if (dayDiff === 0) {
     score += 15;
     reasons.push("نفس التاريخ");
   } else if (dayDiff <= options.dateWindowDays) {
     score += 8;
     reasons.push(`التاريخان متقاربان (${dayDiff} يوم)`);
+  }
+
+  // تكرار المبلغ نفسه كل شهر ليس اشتباهاً بحد ذاته؛ نخفضه ما لم يتطابق المرجع.
+  if (dayDiff > 31 && !sameReference) {
+    score -= 20;
+    reasons.push("تكرار دوري محتمل (الفترة مختلفة)");
   }
 
   const textScore = bestTextSimilarity(entryText(a), entryText(b));
@@ -136,7 +143,7 @@ export function detectDuplicates(
 ): DuplicateGroup[] {
   const config: Required<Omit<DuplicateOptions, "from" | "to">> = {
     dateWindowDays: options.dateWindowDays ?? 3,
-    minScore: options.minScore ?? 50,
+    minScore: options.minScore ?? 60,
     amountTolerance: options.amountTolerance ?? 0.01,
     descriptionThreshold: options.descriptionThreshold ?? 0.6,
   };

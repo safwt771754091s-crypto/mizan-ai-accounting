@@ -139,7 +139,7 @@ export function detectAuditFindings(
           confidence: 1,
         }),
       );
-    } else if (entry.date.slice(0, 10) < periodFrom || entry.date.slice(0, 10) > periodTo) {
+    } else if (entry.source !== "opening" && (entry.date.slice(0, 10) < periodFrom || entry.date.slice(0, 10) > periodTo)) {
       findings.push(
         finding({
           code: "ENTRY_OUTSIDE_PERIOD",
