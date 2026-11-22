@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Bot } from "lucide-react";
 import { loadCompanyContext } from "@/lib/data/context";
-import { isAiConfigured } from "@/lib/supabase/config";
+import { aiModel, isAiConfigured } from "@/lib/supabase/config";
 import { AssistantChat } from "@/components/app/assistant-chat";
 import { NoCompanyState } from "@/components/app/blocks";
 import { Money } from "@/components/app/money";
@@ -40,7 +40,7 @@ export default async function AssistantPage({
         actions={
           <span className="inline-flex items-center gap-1.5 rounded-xl border border-line bg-white px-3 py-2 text-[11px] font-semibold text-muted">
             <Bot className="h-3.5 w-3.5 text-teal-700" />
-            {isAiConfigured() ? "مزود AI متصل" : "وضع الحساب المحلي"}
+            {isAiConfigured() ? `مزود AI · ${aiModel()}` : "وضع الحساب المحلي"}
           </span>
         }
       />
@@ -65,6 +65,7 @@ export default async function AssistantPage({
         companyName={ctx.company.name}
         currency={ctx.currency}
         aiConfigured={isAiConfigured()}
+        aiModel={isAiConfigured() ? aiModel() : null}
       />
     </>
   );

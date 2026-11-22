@@ -1,6 +1,8 @@
 import { formatMoney } from "@/lib/accounting/money";
-import { aiBaseUrl, aiModel, isAiConfigured } from "@/lib/supabase/config";
+import { isAiConfigured } from "@/lib/supabase/config";
 import { formatContextForPrompt, type AssistantContext } from "./context";
+import { findUngroundedNumbers } from "./grounding";
+import { callChatCompletion, describeProviderFailure } from "./provider";
 
 export interface AssistantAnswer {
   answer: string;
@@ -270,42 +272,35 @@ const SYSTEM_PROMPT = `أنت مساعد محاسبي في منصة "RAKAZ AI". 
 4. إذا لم تكف البيانات للإجابة، قل ذلك بوضوح واذكر البيانات الناقصة.
 5. ذكّر عند الحديث عن المخاطر أو التكرار أن النتائج مؤشرات للمراجعة وليست دليلاً على احتيال.
 6. لا تعرض بيانات شركات أخرى، ولا تفترض بيانات غير موجودة.
-7. استخدم نقاطاً قصيرة، وضع الأرقام المالية بين علامتي تنصيص عند الحاجة.`;
+7. استخدم نقاطاً قصيرة، وضع الأرقام المالية بين علامتي تنصيص عند الحاجة.
+8. لا تجمع ولا تطرح ولا تحسب نسباً جديدة؛ استخدم القيم كما وردت حرفياً، وإذا احتجت قيمة غير موجودة فاذكر أنها غير متاحة.`;
 
-async function callProvider(question: string, context: AssistantContext): Promise<string> {
-  const response = await fetch(`${aiBaseUrl()}/chat/completions`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.AI_PROVIDER_API_KEY}`,
+async function callProvider(question: string, promptContext: string): Promise<string> {
+  return callChatCompletion([
+    { role: "system", content: SYSTEM_PROMPT },
+    {
+      role: "user",
+      content: `بيانات الشركة (JSON):\n${promptContext}\n\nسؤال المستخدم: ${question}`,
     },
-    body: JSON.stringify({
-      model: aiModel(),
-      temperature: 0,
-      max_tokens: 800,
-      messages: [
-        { role: "system", content: SYSTEM_PROMPT },
-        {
-          role: "user",
-          content: `بيانات الشركة (JSON):\n${formatContextForPrompt(context)}\n\nسؤال المستخدم: ${question}`,
-        },
-      ],
-    }),
-    signal: AbortSignal.timeout(20000),
-  });
-  if (!response.ok) throw new Error(`AI provider responded with ${response.status}`);
-  const payload = (await response.json()) as { choices?: Array<{ message?: { content?: string } }> };
-  const content = payload.choices?.[0]?.message?.content?.trim();
-  if (!content) throw new Error("AI provider returned an empty response");
-  return content;
+  ]);
 }
 
 export async function askAssistant(question: string, context: AssistantContext): Promise<AssistantAnswer> {
   const local = answerLocally(question, context);
   if (!isAiConfigured()) return local;
 
+  const promptContext = formatContextForPrompt(context);
+
   try {
-    const answer = await callProvider(question, context);
+    const answer = await callProvider(question, promptContext);
+    const ungrounded = findUngroundedNumbers(answer, promptContext);
+    if (ungrounded.length) {
+      return {
+        ...local,
+        fallbackReason:
+          "مُنع عرض إجابة تحتوي أرقاماً غير مستمدة من بيانات الشركة؛ عُرضت إجابة محسوبة محلياً بدلاً منها.",
+      };
+    }
     return {
       answer,
       mode: "ai",
@@ -318,10 +313,7 @@ export async function askAssistant(question: string, context: AssistantContext):
   } catch (error) {
     return {
       ...local,
-      fallbackReason:
-        error instanceof Error && error.message.includes("timeout")
-          ? "انتهت مهلة الاتصال بمزود الذكاء الاصطناعي؛ عُرضت إجابة محسوبة محلياً."
-          : "تعذر الاتصال بمزود الذكاء الاصطناعي؛ عُرضت إجابة محسوبة محلياً.",
+      fallbackReason: `${describeProviderFailure(error)} عُرضت إجابة محسوبة محلياً.`,
     };
   }
 }

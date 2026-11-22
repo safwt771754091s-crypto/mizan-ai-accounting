@@ -12,7 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "db:seed": "RAKAZ_SEED_TARGET=store vitest run src/tests/seed.test.ts --reporter=verbose"
+    "db:seed": "RAKAZ_SEED_TARGET=store vitest run src/tests/seed.test.ts --reporter=verbose",
+    "ai:check": "node scripts/ai-check.mjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "1.3.1",

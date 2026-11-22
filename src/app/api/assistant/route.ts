@@ -4,7 +4,7 @@ import { getCurrentUser } from "@/lib/auth";
 import { getRepository } from "@/lib/data/repository";
 import { buildAssistantContext } from "@/lib/ai/context";
 import { askAssistant } from "@/lib/ai/agent";
-import { isAiConfigured } from "@/lib/supabase/config";
+import { aiModel, aiProviderHost, isAiConfigured } from "@/lib/supabase/config";
 
 export const runtime = "nodejs";
 export const maxDuration = 45;
@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     sources: result.sources,
     fallbackReason: result.fallbackReason ?? null,
     aiConfigured: isAiConfigured(),
+    provider: isAiConfigured() ? { model: aiModel(), host: aiProviderHost() } : null,
     company: { id: company.id, name: company.name, currency: company.currency },
     period,
   });
