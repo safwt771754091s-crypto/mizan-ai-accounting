@@ -1,7 +1,14 @@
 import Decimal from "decimal.js";
 import { dec, money } from "./money";
 import { normalBalanceOf } from "./accounts";
-import { accountBalancesAt, addDays, buildTrialBalance, entryTotals, startOfYear } from "./engine";
+import {
+  accountBalancesAt,
+  addDays,
+  buildTrialBalance,
+  entryTotals,
+  startOfYear,
+} from "./engine";
+import { buildBalanceSheet } from "./statements";
 import type { Account, AuditFinding, DateRange, JournalEntry, Ledger, Severity } from "./types";
 
 export interface FindingOptions extends DateRange {
@@ -196,6 +203,24 @@ export function detectAuditFindings(
     }
     for (const line of entry.lines) {
       const code = line.accountCode?.trim();
+      if (!code) {
+        findings.push(
+          finding({
+            code: "LINE_WITHOUT_ACCOUNT",
+            title: "سطر قيد بلا حساب",
+            description: `القيد ${entry.entryNumber} يحتوي سطراً بمبلغ ${money(dec(line.debit).plus(line.credit)).toFixed(2)} دون تحديد حساب.`,
+            severity: "critical",
+            category: "chart_of_accounts",
+            entryNumber: entry.entryNumber,
+            entryId: entry.id,
+            source: entry.source,
+            amount: money(dec(line.debit).plus(line.credit)),
+            reason: "السطر بلا حساب لا يمكن ترحيله إلى أي حساب، ويُسقط المبلغ من ميزان المراجعة.",
+            recommendation: "حدد الحساب الصحيح للسطر ثم أعد الاستيراد أو الترحيل.",
+            confidence: 1,
+          }),
+        );
+      }
       if (code && !byCode.has(code)) {
         findings.push(
           finding({
@@ -341,6 +366,57 @@ export function detectAuditFindings(
     );
   }
 
+  if (ledger.currency) {
+    for (const entry of posted) {
+      const entryCurrency = entry.currency?.trim();
+      if (!entryCurrency || entryCurrency === ledger.currency) continue;
+      findings.push(
+        finding({
+          code: "CURRENCY_MISMATCH",
+          title: "قيد بعملة مختلفة عن عملة الشركة",
+          description: `القيد ${entry.entryNumber} مسجل بعملة ${entryCurrency} بينما عملة الشركة ${ledger.currency}.`,
+          severity: "high",
+          category: "currency",
+          entryNumber: entry.entryNumber,
+          entryId: entry.id,
+          source: entry.source,
+          amount: money(entryTotals(entry).debit),
+          reason: "المحرك يجمع المبالغ بعملة واحدة ولا يطبق تحويل عملات؛ إدخال مبلغ بعملة أخرى يجعل المجاميع غير دقيقة.",
+          recommendation: "حوّل المبلغ إلى عملة الشركة بسعر الصرف الموثق، أو أضف حقل سعر الصرف قبل الترحيل.",
+          confidence: 1,
+          evidence: { entryCurrency, companyCurrency: ledger.currency },
+        }),
+      );
+    }
+  }
+
+  let openingDebit = new Decimal(0);
+  let openingCredit = new Decimal(0);
+  for (const account of ledger.accounts) {
+    const opening = dec(account.openingBalance ?? 0);
+    if (opening.isZero()) continue;
+    const side = account.openingBalanceType ?? normalBalanceOf(account);
+    if (side === "debit") openingDebit = openingDebit.plus(opening);
+    else openingCredit = openingCredit.plus(opening);
+  }
+  const openingDifference = openingDebit.minus(openingCredit);
+  if (openingDifference.abs().gt(new Decimal("0.01"))) {
+    findings.push(
+      finding({
+        code: "OPENING_BALANCE_NOT_BALANCED",
+        title: "أرصدة افتتاحية غير متوازنة",
+        description: `إجمالي الأرصدة الافتتاحية المدنية ${openingDebit.toFixed(2)} لا يساوي الدائنة ${openingCredit.toFixed(2)} بفرق ${openingDifference.toFixed(2)}.`,
+        severity: "critical",
+        category: "balance",
+        amount: money(openingDifference.abs()),
+        reason: "الأرصدة الافتتاحية غير المتوازنة تُفسد كل القوائم اللاحقة لأنها أساس كل الأرصدة.",
+        recommendation: "راجع أرصدة بداية الفترة في دليل الحسابات وطابقها مع ميزان المراجعة السابق.",
+        confidence: 1,
+        evidence: { openingDebit: openingDebit.toFixed(2), openingCredit: openingCredit.toFixed(2) },
+      }),
+    );
+  }
+
   const trial = buildTrialBalance(ledger, { from, to: asOf });
   if (!trial.balanced && trial.rows.length > 0) {
     findings.push(
@@ -360,6 +436,29 @@ export function detectAuditFindings(
         },
       }),
     );
+  }
+
+  if (trial.balanced) {
+    const balance = buildBalanceSheet(ledger, { from, to: asOf, periodStart: from });
+    if (!balance.balanced) {
+      findings.push(
+        finding({
+          code: "BALANCE_SHEET_IMBALANCE",
+          title: "تناقض بين القوائم: المركز المالي غير متوازن",
+          description: `الأصول ${balance.totalAssets.toFixed(2)} لا تساوي الالتزامات وحقوق الملكية ${balance.totalLiabilitiesAndEquity.toFixed(2)} بفرق ${balance.difference.toFixed(2)} رغم توازن ميزان المراجعة.`,
+          severity: "critical",
+          category: "statements",
+          amount: Math.abs(balance.difference),
+          reason: "غالباً أرباح فترة سابقة لم تُقفل في الأرباح المحتجزة، أو تصنيف حساب غير صحيح بين القوائم.",
+          recommendation: "راجع قيود الإقفال والأرصدة الافتتاحية وتصنيف الحسابات، ثم أعد إعداد القوائم.",
+          confidence: 0.9,
+          evidence: {
+            totalAssets: balance.totalAssets.toFixed(2),
+            totalLiabilitiesAndEquity: balance.totalLiabilitiesAndEquity.toFixed(2),
+          },
+        }),
+      );
+    }
   }
 
   if (ledger.periods?.length) {

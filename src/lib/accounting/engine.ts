@@ -83,6 +83,9 @@ export function validateEntry(entry: JournalEntry, accounts?: Account[]): EntryV
     if (!hasDebit && !hasCredit) {
       issues.push({ code: "ZERO_LINE", message: `السطر على الحساب ${line.accountCode} بمبلغ صفر`, severity: "low" });
     }
+    if (!line.accountCode || !line.accountCode.trim()) {
+      issues.push({ code: "MISSING_ACCOUNT", message: "سطر في القيد بلا حساب", severity: "critical" });
+    }
     if (dec(line.debit).isNegative() || dec(line.credit).isNegative()) {
       issues.push({ code: "NEGATIVE_AMOUNT", message: `السطر على الحساب ${line.accountCode} يحتوي مبلغاً سالباً`, severity: "high" });
     }
@@ -175,12 +178,12 @@ export function computeMovements(
   const entries = filterEntries(ledger.entries, { includeDraft: false, includeVoid: false });
   let counted = 0;
   for (const entry of entries) {
-    const totals = entryTotals(entry);
-    if (!totals.balanced) unbalanced.push(entry);
     const day = entry.date.slice(0, 10);
     const beforeRange = Boolean(range.from && day < range.from);
     const afterRange = Boolean(range.to && day > range.to);
     if (afterRange) continue;
+    const totals = entryTotals(entry);
+    if (!totals.balanced) unbalanced.push(entry);
     counted += 1;
     for (const line of entry.lines) {
       const code = line.accountCode?.trim();
