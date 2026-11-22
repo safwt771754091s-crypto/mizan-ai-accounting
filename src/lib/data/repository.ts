@@ -1,4 +1,5 @@
 import type { Ledger } from "@/lib/accounting/types";
+import type { Permission } from "@/lib/auth/permission-catalog";
 import type { ImportBatchRecord } from "@/lib/import/types";
 import { dataMode } from "../supabase/config";
 import { buildChart } from "./demo-data";
@@ -11,6 +12,7 @@ import type {
   CompanyData,
   CompanyMember,
   CompanyWithAccess,
+  CustomRole,
   FindingState,
   ImportSaveInput,
   MemberRole,
@@ -43,6 +45,22 @@ export interface Repository {
     note?: string,
   ): Promise<void>;
   listMembers(companyId: string): Promise<Array<CompanyMember & { user: AppUser }>>;
+  /** الأدوار المخصصة داخل الشركة (لا تشمل أدوار النظام). */
+  listCustomRoles(companyId: string): Promise<CustomRole[]>;
+  createCustomRole(
+    companyId: string,
+    userId: string,
+    input: { name: string; description?: string | null; permissions: Permission[] },
+  ): Promise<{ ok: boolean; role?: CustomRole; error?: string }>;
+  updateCustomRole(
+    companyId: string,
+    roleId: string,
+    patch: { name?: string; description?: string | null; permissions?: Permission[] },
+  ): Promise<{ ok: boolean; error?: string }>;
+  deleteCustomRole(companyId: string, roleId: string): Promise<{ ok: boolean; error?: string }>;
+  /** الدور المخصص المعيّن للعضو، أو null إن كان يستخدم دوره النظامي. */
+  getMemberCustomRole(userId: string, companyId: string): Promise<CustomRole | null>;
+  setMemberCustomRole(companyId: string, memberId: string, roleId: string | null): Promise<{ ok: boolean; error?: string }>;
   inviteMember(companyId: string, email: string, role: MemberRole): Promise<{ ok: boolean; error?: string }>;
   updateMemberRole(companyId: string, memberId: string, role: MemberRole): Promise<void>;
   removeMember(companyId: string, memberId: string): Promise<void>;
@@ -420,6 +438,98 @@ class DemoRepository implements Repository {
         store.members = store.members.filter((m) => m.id !== memberId);
       }
     });
+  }
+
+  async listCustomRoles(companyId: string): Promise<CustomRole[]> {
+    const store = await readStore();
+    return store.roles.filter((role) => role.companyId === companyId);
+  }
+
+  async createCustomRole(
+    companyId: string,
+    userId: string,
+    input: { name: string; description?: string | null; permissions: Permission[] },
+  ): Promise<{ ok: boolean; role?: CustomRole; error?: string }> {
+    const name = input.name.trim();
+    if (name.length < 2) return { ok: false, error: "اسم الدور قصير جداً." };
+    const store = await readStore();
+    if (store.roles.some((role) => role.companyId === companyId && role.name === name)) {
+      return { ok: false, error: "يوجد دور بهذا الاسم في الشركة." };
+    }
+    const role: CustomRole = {
+      id: `role-${Date.now().toString(36)}`,
+      companyId,
+      name,
+      description: input.description?.trim() || null,
+      permissions: [...new Set(input.permissions)],
+      createdAt: new Date().toISOString(),
+      createdBy: userId,
+    };
+    await mutateStore((s) => {
+      s.roles.push(role);
+    });
+    return { ok: true, role };
+  }
+
+  async updateCustomRole(
+    companyId: string,
+    roleId: string,
+    patch: { name?: string; description?: string | null; permissions?: Permission[] },
+  ): Promise<{ ok: boolean; error?: string }> {
+    const store = await readStore();
+    const existing = store.roles.find((role) => role.id === roleId && role.companyId === companyId);
+    if (!existing) return { ok: false, error: "الدور غير موجود في هذه الشركة." };
+    const name = patch.name?.trim();
+    if (name && store.roles.some((role) => role.companyId === companyId && role.id !== roleId && role.name === name)) {
+      return { ok: false, error: "يوجد دور بهذا الاسم في الشركة." };
+    }
+    await mutateStore((s) => {
+      const role = s.roles.find((item) => item.id === roleId && item.companyId === companyId);
+      if (!role) return;
+      if (name) role.name = name;
+      if (patch.description !== undefined) role.description = patch.description?.trim() || null;
+      if (patch.permissions) role.permissions = [...new Set(patch.permissions)];
+    });
+    return { ok: true };
+  }
+
+  async deleteCustomRole(companyId: string, roleId: string): Promise<{ ok: boolean; error?: string }> {
+    const store = await readStore();
+    const exists = store.roles.some((role) => role.id === roleId && role.companyId === companyId);
+    if (!exists) return { ok: false, error: "الدور غير موجود في هذه الشركة." };
+    await mutateStore((s) => {
+      s.roles = s.roles.filter((role) => !(role.id === roleId && role.companyId === companyId));
+      for (const member of s.members) {
+        if (member.companyId === companyId && member.customRoleId === roleId) member.customRoleId = null;
+      }
+    });
+    return { ok: true };
+  }
+
+  async getMemberCustomRole(userId: string, companyId: string): Promise<CustomRole | null> {
+    const store = await readStore();
+    const member = store.members.find((item) => item.companyId === companyId && item.userId === userId);
+    if (!member?.customRoleId) return null;
+    return store.roles.find((role) => role.id === member.customRoleId && role.companyId === companyId) ?? null;
+  }
+
+  async setMemberCustomRole(
+    companyId: string,
+    memberId: string,
+    roleId: string | null,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const store = await readStore();
+    const member = store.members.find((item) => item.id === memberId && item.companyId === companyId);
+    if (!member) return { ok: false, error: "العضو غير موجود في هذه الشركة." };
+    if (roleId) {
+      const role = store.roles.find((item) => item.id === roleId && item.companyId === companyId);
+      if (!role) return { ok: false, error: "الدور المخصص غير موجود في هذه الشركة." };
+    }
+    await mutateStore((s) => {
+      const target = s.members.find((item) => item.id === memberId && item.companyId === companyId);
+      if (target) target.customRoleId = roleId;
+    });
+    return { ok: true };
   }
 
   async listUsers(): Promise<AppUser[]> {

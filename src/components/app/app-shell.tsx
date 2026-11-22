@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils/cn";
 import { MEMBER_ROLE_LABELS } from "@/lib/data/types";
+import type { Permission } from "@/lib/auth/permission-catalog";
 import type { CompanyWithAccess, MemberRole } from "@/lib/data/types";
 import type { AppUser } from "@/lib/data/types";
 import { signOutAction } from "@/app/actions/auth";
@@ -36,6 +37,8 @@ interface NavItem {
   label: string;
   icon: typeof LayoutDashboard;
   badge?: number;
+  /** عند غياب الصلاحية لا يظهر الرابط إطلاقاً (إخفاء الواجهة لا يُغني عن تحقق الخادم). */
+  permission?: Permission;
 }
 
 const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
@@ -47,35 +50,35 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
     title: "المحاسبة",
     items: [
       { href: "/companies", label: "الشركات", icon: Building2 },
-      { href: "/upload", label: "رفع الملفات", icon: Upload },
-      { href: "/imports", label: "بيانات المحاسبة المستوردة", icon: FileSpreadsheet },
-      { href: "/accounts", label: "دليل الحسابات", icon: BookOpen },
-      { href: "/trial-balance", label: "ميزان المراجعة", icon: Table2 },
-      { href: "/ledger", label: "دفتر الأستاذ", icon: Receipt },
+      { href: "/upload", label: "رفع الملفات", icon: Upload, permission: "imports.create" },
+      { href: "/imports", label: "بيانات المحاسبة المستوردة", icon: FileSpreadsheet, permission: "imports.read" },
+      { href: "/accounts", label: "دليل الحسابات", icon: BookOpen, permission: "accounts.read" },
+      { href: "/trial-balance", label: "ميزان المراجعة", icon: Table2, permission: "reports.view" },
+      { href: "/ledger", label: "دفتر الأستاذ", icon: Receipt, permission: "journal.read" },
     ],
   },
   {
     title: "التقارير والتحليل",
     items: [
-      { href: "/statements", label: "القوائم المالية", icon: FileText },
-      { href: "/analysis", label: "التحليل المالي", icon: TrendingUp },
-      { href: "/reports", label: "التقارير", icon: Wallet },
+      { href: "/statements", label: "القوائم المالية", icon: FileText, permission: "reports.view" },
+      { href: "/analysis", label: "التحليل المالي", icon: TrendingUp, permission: "reports.view" },
+      { href: "/reports", label: "التقارير", icon: Wallet, permission: "reports.view" },
     ],
   },
   {
     title: "المراجعة الذكية",
     items: [
-      { href: "/findings", label: "اكتشاف الأخطاء", icon: ShieldAlert },
-      { href: "/anomalies", label: "العمليات غير المعتادة", icon: ShieldAlert },
-      { href: "/duplicates", label: "القيود المكررة", icon: Copy },
+      { href: "/findings", label: "اكتشاف الأخطاء", icon: ShieldAlert, permission: "findings.view" },
+      { href: "/anomalies", label: "العمليات غير المعتادة", icon: ShieldAlert, permission: "findings.view" },
+      { href: "/duplicates", label: "القيود المكررة", icon: Copy, permission: "findings.view" },
     ],
   },
   {
     title: "النظام",
     items: [
-      { href: "/assistant", label: "المساعد الذكي", icon: Bot },
-      { href: "/settings", label: "الإعدادات", icon: Settings },
-      { href: "/users", label: "المستخدمون والصلاحيات", icon: Users },
+      { href: "/assistant", label: "المساعد الذكي", icon: Bot, permission: "reports.view" },
+      { href: "/settings", label: "الإعدادات", icon: Settings, permission: "company.read" },
+      { href: "/users", label: "المستخدمون والصلاحيات", icon: Users, permission: "company.members.read" },
     ],
   },
 ];
@@ -84,12 +87,14 @@ export function AppShell({
   user,
   companies,
   alertsByCompany,
+  permissionsByCompany,
   mode,
   children,
 }: {
   user: AppUser;
   companies: CompanyWithAccess[];
   alertsByCompany: Record<string, number>;
+  permissionsByCompany: Record<string, Permission[]>;
   mode: "demo" | "supabase";
   children: React.ReactNode;
 }) {
@@ -102,6 +107,11 @@ export function AppShell({
   const currentCompanyId = current?.id ?? null;
   const role: MemberRole | null = current?.role ?? null;
   const alerts = currentCompanyId ? (alertsByCompany[currentCompanyId] ?? 0) : 0;
+  const permissions = currentCompanyId ? (permissionsByCompany[currentCompanyId] ?? []) : [];
+  const sections = SECTIONS.map((section) => ({
+    ...section,
+    items: section.items.filter((item) => !item.permission || permissions.includes(item.permission)),
+  })).filter((section) => section.items.length > 0);
 
   const withCompany = (href: string) =>
     currentCompanyId ? `${href}${href.includes("?") ? "&" : "?"}company=${currentCompanyId}` : href;
@@ -143,7 +153,7 @@ export function AppShell({
       </div>
 
       <nav className="scrollbar-thin flex-1 overflow-y-auto px-3 pb-4">
-        {SECTIONS.map((section) => (
+        {sections.map((section) => (
           <div key={section.title} className="mb-4">
             <p className="mb-1.5 px-2 text-[10px] font-bold uppercase tracking-wider text-white/55">{section.title}</p>
             <ul className="space-y-0.5">

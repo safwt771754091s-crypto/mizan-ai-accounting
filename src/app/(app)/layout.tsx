@@ -3,6 +3,8 @@ import { requireUser } from "@/lib/auth";
 import { getRepository } from "@/lib/data/repository";
 import { detectAuditFindings } from "@/lib/accounting/findings";
 import { dataMode } from "@/lib/supabase/config";
+import type { Permission } from "@/lib/auth/permission-catalog";
+import { resolveCompanyPermission } from "@/lib/auth/permissions";
 import { AppShell } from "@/components/app/app-shell";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +13,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const companies = await repo.listCompanies(user.id);
 
   const alertsByCompany: Record<string, number> = {};
+  const permissionsByCompany: Record<string, Permission[]> = {};
+  for (const company of companies) {
+    const state = await resolveCompanyPermission(user, company.id);
+    permissionsByCompany[company.id] = state?.permissions ?? [];
+  }
   for (const company of companies.slice(0, 5)) {
     const data = await repo.getCompanyData(company.id);
     const findings = detectAuditFindings(
@@ -22,7 +29,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
 
   return (
     <Suspense fallback={<div className="min-h-screen bg-surface" />}>
-      <AppShell user={user} companies={companies} alertsByCompany={alertsByCompany} mode={dataMode()}>
+      <AppShell
+        user={user}
+        companies={companies}
+        alertsByCompany={alertsByCompany}
+        permissionsByCompany={permissionsByCompany}
+        mode={dataMode()}
+      >
         {children}
       </AppShell>
     </Suspense>

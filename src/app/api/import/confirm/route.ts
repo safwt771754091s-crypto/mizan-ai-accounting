@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { assertCompanyPermission } from "@/lib/auth/permissions";
 import { getRepository } from "@/lib/data/repository";
 import { parseWorkbook } from "@/lib/import/parse";
 import { schemaFor } from "@/lib/import/datasets";
@@ -72,11 +73,8 @@ export async function POST(request: Request) {
   }
 
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, input.companyId);
-  if (!access) return NextResponse.json({ ok: false, error: "لا تملك صلاحية الوصول إلى هذه الشركة." }, { status: 403 });
-  if (access.role === "viewer" || access.role === "auditor") {
-    return NextResponse.json({ ok: false, error: "دورك الحالي لا يسمح بالاستيراد." }, { status: 403 });
-  }
+  const gate = await assertCompanyPermission(user, input.companyId, "imports.create");
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
 
   const buffer = Buffer.from(await file.arrayBuffer());
   const signature = validateFileSignature(buffer, kind);

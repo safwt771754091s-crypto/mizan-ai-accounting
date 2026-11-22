@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import { ShieldCheck, Upload } from "lucide-react";
 import { loadCompanyContext } from "@/lib/data/context";
 import { ImportWizard } from "@/components/app/import-wizard";
-import { NoCompanyState } from "@/components/app/blocks";
-import { Alert, PageHeader } from "@/components/ui/misc";
+import { AccessDenied, NoCompanyState } from "@/components/app/blocks";
+import { PageHeader } from "@/components/ui/misc";
 
 export const metadata: Metadata = { title: "رفع الملفات" };
 
@@ -24,7 +24,14 @@ export default async function UploadPage({
     );
   }
 
-  const readOnly = ctx.role === "viewer" || ctx.role === "auditor";
+  if (!ctx.allows("imports.create")) {
+    return (
+      <>
+        <PageHeader eyebrow={ctx.company.name} title="رفع الملفات" />
+        <AccessDenied description="رفع الملفات واستيرادها يتطلب صلاحية «استيراد ملفات»." />
+      </>
+    );
+  }
 
   return (
     <>
@@ -34,13 +41,7 @@ export default async function UploadPage({
         description="ارفع ميزان المراجعة أو دفتر الأستاذ أو القيود أو المبيعات. يتم اكتشاف الأعمدة تلقائياً، ويمكنك مراجعة البيانات قبل الحفظ."
       />
 
-      {readOnly ? (
-        <Alert variant="warning" title="صلاحية القراءة فقط">
-          دورك الحالي ({ctx.role === "auditor" ? "مراجع" : "مشاهد"}) لا يسمح برفع الملفات أو تعديل البيانات.
-        </Alert>
-      ) : (
-        <ImportWizard companyId={ctx.company.id} currency={ctx.currency} />
-      )}
+      <ImportWizard companyId={ctx.company.id} currency={ctx.currency} />
 
       <div className="mt-6 grid gap-3 md:grid-cols-3">
         <div className="rounded-2xl border border-line bg-white p-4">

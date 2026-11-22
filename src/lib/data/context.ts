@@ -1,5 +1,7 @@
 import type { Ledger } from "@/lib/accounting/types";
 import { requireUser } from "@/lib/auth";
+import type { Permission } from "@/lib/auth/permission-catalog";
+import { resolveCompanyPermission } from "@/lib/auth/permissions";
 import { getRepository, type Repository } from "./repository";
 import type { AppUser, CompanyData, CompanyWithAccess, MemberRole } from "./types";
 
@@ -11,6 +13,9 @@ export interface CompanyContext {
   data: CompanyData;
   ledger: Ledger;
   role: MemberRole | null;
+  /** صلاحيات المستخدم الفعلية داخل الشركة الحالية (تشمل الأدوار المخصصة). */
+  permissions: Permission[];
+  allows: (permission: Permission) => boolean;
   currency: string;
   period: { from: string; to: string };
 }
@@ -48,12 +53,15 @@ export async function loadCompanyContext(companyId?: string): Promise<CompanyCon
       data: EMPTY_DATA,
       ledger: { accounts: [], entries: [], currency: "SAR" },
       role: null,
+      permissions: [],
+      allows: () => false,
       currency: "SAR",
       period: { from: `${new Date().getFullYear()}-01-01`, to: new Date().toISOString().slice(0, 10) },
     };
   }
 
   const company = companies.find((c) => c.id === companyId) ?? companies[0];
+  const permissionState = await resolveCompanyPermission(user, company.id);
   const data = await repo.getCompanyData(company.id);
   const ledger: Ledger = {
     accounts: data.accounts,
@@ -70,6 +78,8 @@ export async function loadCompanyContext(companyId?: string): Promise<CompanyCon
     data,
     ledger,
     role: company.role,
+    permissions: permissionState?.permissions ?? [],
+    allows: (permission: Permission) => permissionState?.allows(permission) ?? false,
     currency: company.currency,
     period: defaultPeriod(company),
   };

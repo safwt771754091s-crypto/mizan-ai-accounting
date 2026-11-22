@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireUser } from "@/lib/auth";
+import { assertCompanyPermission } from "@/lib/auth/permissions";
+import { isPermission } from "@/lib/auth/permission-catalog";
 import { getRepository } from "@/lib/data/repository";
-import { canManageUsers, canReview, canWrite } from "@/lib/data/types";
 import type { MemberRole } from "@/lib/data/types";
 import { companySchema, fieldErrors, memberSchema } from "@/lib/validation/schemas";
 
@@ -63,9 +64,8 @@ export async function updateCompanyAction(_prev: CompanyFormState, formData: For
   const companyId = String(formData.get("companyId") ?? "");
   if (!companyId) return { error: "معرّف الشركة مفقود." };
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, companyId);
-  if (!access) return { error: "لا تملك صلاحية الوصول إلى هذه الشركة." };
-  if (!canWrite(access.role)) return { error: "لا تملك صلاحية تعديل بيانات الشركة." };
+  const gate = await assertCompanyPermission(user, companyId, "company.settings.manage");
+  if (!gate.ok) return { error: gate.error };
 
   const parsed = companySchema.safeParse(readCompanyForm(formData));
   if (!parsed.success) return { errors: fieldErrors(parsed.error) };
@@ -89,9 +89,8 @@ export async function inviteMemberAction(_prev: CompanyFormState, formData: Form
   const user = await requireUser("/users");
   const companyId = String(formData.get("companyId") ?? "");
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, companyId);
-  if (!access) return { error: "لا تملك صلاحية الوصول." };
-  if (!canManageUsers(access.role)) return { error: "إدارة المستخدمين متاحة للمالك أو المدير فقط." };
+  const gate = await assertCompanyPermission(user, companyId, "company.members.manage");
+  if (!gate.ok) return { error: gate.error };
   const parsed = memberSchema.safeParse({
     email: String(formData.get("email") ?? ""),
     role: String(formData.get("role") ?? "viewer"),
@@ -109,11 +108,12 @@ export async function updateMemberRoleAction(formData: FormData): Promise<void> 
   const companyId = String(formData.get("companyId") ?? "");
   const memberId = String(formData.get("memberId") ?? "");
   const role = String(formData.get("role") ?? "") as MemberRole;
-  if (!["admin", "accountant", "auditor", "viewer"].includes(role)) return;
+  if (!["admin", "senior_accountant", "accountant", "auditor", "viewer"].includes(role)) return;
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, companyId);
-  if (!access || !canManageUsers(access.role)) return;
+  const gate = await assertCompanyPermission(user, companyId, "company.members.manage");
+  if (!gate.ok) return;
   await repo.updateMemberRole(companyId, memberId, role);
+  await repo.log(companyId, user.id, "update_member_role", "company_member", memberId, { role });
   revalidatePath("/users");
 }
 
@@ -122,9 +122,10 @@ export async function removeMemberAction(formData: FormData): Promise<void> {
   const companyId = String(formData.get("companyId") ?? "");
   const memberId = String(formData.get("memberId") ?? "");
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, companyId);
-  if (!access || !canManageUsers(access.role)) return;
+  const gate = await assertCompanyPermission(user, companyId, "company.members.manage");
+  if (!gate.ok) return;
   await repo.removeMember(companyId, memberId);
+  await repo.log(companyId, user.id, "remove_member", "company_member", memberId);
   revalidatePath("/users");
 }
 
@@ -147,10 +148,79 @@ export async function setFindingStatusAction(formData: FormData): Promise<void> 
   });
   if (!parsed.success) return;
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, parsed.data.companyId);
-  if (!access || !canReview(access.role)) return;
+  const gate = await assertCompanyPermission(user, parsed.data.companyId, "findings.review");
+  if (!gate.ok) return;
   await repo.setFindingStatus(parsed.data.companyId, user.id, parsed.data.findingId, parsed.data.status, parsed.data.note);
   revalidatePath("/findings");
   revalidatePath("/dashboard");
   revalidatePath(parsed.data.returnTo ?? "/findings");
+}
+
+const customRoleSchema = z.object({
+  companyId: z.string().min(1),
+  name: z.string().min(2).max(60),
+  description: z.string().max(200).optional(),
+  permissions: z.array(z.string()).default([]),
+});
+
+export async function createCustomRoleAction(_prev: CompanyFormState, formData: FormData): Promise<CompanyFormState> {
+  const user = await requireUser("/users");
+  const parsed = customRoleSchema.safeParse({
+    companyId: String(formData.get("companyId") ?? ""),
+    name: String(formData.get("name") ?? "").trim(),
+    description: String(formData.get("description") ?? "").trim() || undefined,
+    permissions: formData.getAll("permissions").map(String),
+  });
+  if (!parsed.success) return { errors: fieldErrors(parsed.error) };
+
+  const gate = await assertCompanyPermission(user, parsed.data.companyId, "company.roles.manage");
+  if (!gate.ok) return { error: gate.error };
+
+  const permissions = parsed.data.permissions.filter(isPermission);
+  if (!permissions.length) return { error: "اختر صلاحية واحدة على الأقل للدور." };
+
+  const repo = getRepository();
+  const result = await repo.createCustomRole(parsed.data.companyId, user.id, {
+    name: parsed.data.name,
+    description: parsed.data.description ?? null,
+    permissions,
+  });
+  if (!result.ok) return { error: result.error };
+  await repo.log(parsed.data.companyId, user.id, "create_role", "role", result.role?.id, {
+    name: parsed.data.name,
+    permissions: permissions.join(","),
+  });
+  revalidatePath("/users");
+  return { message: "تم إنشاء الدور المخصص." };
+}
+
+export async function deleteCustomRoleAction(formData: FormData): Promise<void> {
+  const user = await requireUser("/users");
+  const companyId = String(formData.get("companyId") ?? "");
+  const roleId = String(formData.get("roleId") ?? "");
+  if (!companyId || !roleId) return;
+  const gate = await assertCompanyPermission(user, companyId, "company.roles.manage");
+  if (!gate.ok) return;
+  const repo = getRepository();
+  const result = await repo.deleteCustomRole(companyId, roleId);
+  if (result.ok) await repo.log(companyId, user.id, "delete_role", "role", roleId);
+  revalidatePath("/users");
+}
+
+export async function assignCustomRoleAction(formData: FormData): Promise<void> {
+  const user = await requireUser("/users");
+  const companyId = String(formData.get("companyId") ?? "");
+  const memberId = String(formData.get("memberId") ?? "");
+  const roleId = String(formData.get("roleId") ?? "");
+  if (!companyId || !memberId) return;
+  const gate = await assertCompanyPermission(user, companyId, "company.members.manage");
+  if (!gate.ok) return;
+  const repo = getRepository();
+  const result = await repo.setMemberCustomRole(companyId, memberId, roleId || null);
+  if (result.ok) {
+    await repo.log(companyId, user.id, "assign_custom_role", "company_member", memberId, {
+      roleId: roleId || "none",
+    });
+  }
+  revalidatePath("/users");
 }

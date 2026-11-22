@@ -1,4 +1,5 @@
 import type { Account, JournalEntry, Ledger } from "@/lib/accounting/types";
+import type { Permission } from "@/lib/auth/permission-catalog";
 import type { ImportBatchRecord } from "@/lib/import/types";
 import { createSupabaseServerClient } from "../supabase/server";
 import type { Repository, CompanyAccess } from "./repository";
@@ -10,6 +11,7 @@ import type {
   CompanyData,
   CompanyMember,
   CompanyWithAccess,
+  CustomRole,
   FindingState,
   ImportSaveInput,
   MemberRole,
@@ -98,6 +100,19 @@ function mapEntry(row: Row, lines: Row[]): JournalEntry {
       branch: line.branch ? String(line.branch) : null,
       documentRef: line.document_ref ? String(line.document_ref) : null,
     })),
+  };
+}
+
+function mapCustomRole(row: Row): CustomRole {
+  const perms = (row.role_permissions as Row[] | null) ?? [];
+  return {
+    id: str(row, "id"),
+    companyId: str(row, "company_id"),
+    name: str(row, "name", "دور مخصص"),
+    description: row.description ? String(row.description) : null,
+    permissions: perms.map((item) => str(item, "permission")) as Permission[],
+    createdAt: str(row, "created_at"),
+    createdBy: str(row, "created_by"),
   };
 }
 
@@ -539,6 +554,143 @@ class SupabaseRepository implements Repository {
   async removeMember(companyId: string, memberId: string): Promise<void> {
     const supabase = await createSupabaseServerClient();
     await supabase.from("company_members").delete().eq("id", memberId).eq("company_id", companyId).neq("role", "owner");
+  }
+
+  async listCustomRoles(companyId: string): Promise<CustomRole[]> {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("roles")
+      .select("id, company_id, name, description, created_at, created_by, role_permissions(permission)")
+      .eq("company_id", companyId)
+      .eq("is_system", false)
+      .order("created_at");
+    return ((data ?? []) as Row[]).map(mapCustomRole);
+  }
+
+  async createCustomRole(
+    companyId: string,
+    userId: string,
+    input: { name: string; description?: string | null; permissions: Permission[] },
+  ): Promise<{ ok: boolean; role?: CustomRole; error?: string }> {
+    const name = input.name.trim();
+    if (name.length < 2) return { ok: false, error: "اسم الدور قصير جداً." };
+    const supabase = await createSupabaseServerClient();
+    const { data: created, error } = await supabase
+      .from("roles")
+      .insert({
+        company_id: companyId,
+        name,
+        description: input.description?.trim() || null,
+        is_system: false,
+        created_by: userId,
+      })
+      .select("id, company_id, name, description, created_at, created_by")
+      .single();
+    if (error || !created) return { ok: false, error: "تعذر إنشاء الدور. تحقق من الصلاحيات." };
+    const roleId = str(created as Row, "id");
+    const permissions = [...new Set(input.permissions)];
+    if (permissions.length) {
+      const { error: permError } = await supabase
+        .from("role_permissions")
+        .insert(permissions.map((permission) => ({ role_id: roleId, permission })));
+      if (permError) return { ok: false, error: "تعذر حفظ صلاحيات الدور." };
+    }
+    return {
+      ok: true,
+      role: {
+        id: roleId,
+        companyId,
+        name,
+        description: input.description?.trim() || null,
+        permissions,
+        createdAt: str(created as Row, "created_at"),
+        createdBy: userId,
+      },
+    };
+  }
+
+  async updateCustomRole(
+    companyId: string,
+    roleId: string,
+    patch: { name?: string; description?: string | null; permissions?: Permission[] },
+  ): Promise<{ ok: boolean; error?: string }> {
+    const supabase = await createSupabaseServerClient();
+    const { data: existing } = await supabase
+      .from("roles")
+      .select("id")
+      .eq("id", roleId)
+      .eq("company_id", companyId)
+      .eq("is_system", false)
+      .maybeSingle();
+    if (!existing) return { ok: false, error: "الدور غير موجود في هذه الشركة." };
+
+    const update: Record<string, unknown> = {};
+    if (patch.name?.trim()) update.name = patch.name.trim();
+    if (patch.description !== undefined) update.description = patch.description?.trim() || null;
+    if (Object.keys(update).length) {
+      const { error } = await supabase.from("roles").update(update).eq("id", roleId).eq("company_id", companyId);
+      if (error) return { ok: false, error: "تعذر تحديث الدور." };
+    }
+    if (patch.permissions) {
+      const permissions = [...new Set(patch.permissions)];
+      await supabase.from("role_permissions").delete().eq("role_id", roleId);
+      if (permissions.length) {
+        const { error } = await supabase
+          .from("role_permissions")
+          .insert(permissions.map((permission) => ({ role_id: roleId, permission })));
+        if (error) return { ok: false, error: "تعذر حفظ صلاحيات الدور." };
+      }
+    }
+    return { ok: true };
+  }
+
+  async deleteCustomRole(companyId: string, roleId: string): Promise<{ ok: boolean; error?: string }> {
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase
+      .from("roles")
+      .delete()
+      .eq("id", roleId)
+      .eq("company_id", companyId)
+      .eq("is_system", false);
+    if (error) return { ok: false, error: "تعذر حذف الدور." };
+    return { ok: true };
+  }
+
+  async getMemberCustomRole(userId: string, companyId: string): Promise<CustomRole | null> {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("company_members")
+      .select("custom_role_id, roles(id, company_id, name, description, created_at, created_by, role_permissions(permission))")
+      .eq("company_id", companyId)
+      .eq("user_id", userId)
+      .maybeSingle();
+    const roleRow = (data as Row | null)?.roles as Row | null;
+    if (!roleRow) return null;
+    return mapCustomRole(roleRow);
+  }
+
+  async setMemberCustomRole(
+    companyId: string,
+    memberId: string,
+    roleId: string | null,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const supabase = await createSupabaseServerClient();
+    if (roleId) {
+      const { data: role } = await supabase
+        .from("roles")
+        .select("id")
+        .eq("id", roleId)
+        .eq("company_id", companyId)
+        .maybeSingle();
+      if (!role) return { ok: false, error: "الدور المخصص غير موجود في هذه الشركة." };
+    }
+    const { error } = await supabase
+      .from("company_members")
+      .update({ custom_role_id: roleId })
+      .eq("id", memberId)
+      .eq("company_id", companyId);
+    if (error) return { ok: false, error: "تعذر تعيين الدور المخصص." };
+    return { ok: true };
   }
 
   async listUsers(): Promise<AppUser[]> {
