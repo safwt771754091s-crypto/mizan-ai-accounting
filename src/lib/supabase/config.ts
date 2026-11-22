@@ -12,15 +12,20 @@ export function dataMode(): DataMode {
 }
 
 export function isAiConfigured(): boolean {
-  return Boolean(process.env.AI_PROVIDER_API_KEY);
+  return Boolean((process.env.AI_PROVIDER_API_KEY ?? process.env.AI_API_KEY)?.trim());
 }
 
 export function aiModel(): string {
-  return process.env.AI_MODEL ?? "gpt-4.1-mini";
+  return (process.env.AI_MODEL ?? "gpt-4.1-mini").trim();
 }
 
-export function aiBaseUrl(): string {
-  return (process.env.AI_PROVIDER_BASE_URL ?? "https://api.openai.com/v1").replace(/\/$/, "");
+export function aiProviderHost(): string {
+  const base = (process.env.AI_PROVIDER_BASE_URL ?? "https://api.openai.com/v1").trim();
+  try {
+    return new URL(base).host;
+  } catch {
+    return "مزود مخصص";
+  }
 }
 
 export const MAX_UPLOAD_BYTES = 15 * 1024 * 1024;

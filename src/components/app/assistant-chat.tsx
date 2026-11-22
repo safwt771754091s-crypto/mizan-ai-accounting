@@ -33,11 +33,13 @@ export function AssistantChat({
   companyName,
   currency,
   aiConfigured,
+  aiModel,
 }: {
   companyId: string;
   companyName: string;
   currency: string;
   aiConfigured: boolean;
+  aiModel?: string | null;
 }) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
@@ -99,7 +101,12 @@ export function AssistantChat({
               لم يُضبط مزود ذكاء اصطناعي خارجي. الأسئلة الشائعة تُجاب من محرك التحليل مباشرة بأرقام شركتك، دون إرسال
               بياناتك لأي خدمة خارجية. لإضافة إجابات لغوية مرنة، اضبط متغيرات AI في ملف البيئة.
             </Alert>
-          ) : null}
+          ) : (
+            <p className="rounded-xl border border-teal-100 bg-teal-50 px-3 py-2 text-[10px] leading-5 text-teal-900/85">
+              الإجابات تُولَّد عبر {aiModel ?? "مزود AI"} من بيانات هذه الشركة فقط، وتُفحص آلياً قبل العرض: أي رقم غير
+              موجود في الحسابات المحسوبة يُرفض ويُستبدل بإجابة محلية.
+            </p>
+          )}
 
           <div className="flex-1 space-y-3 overflow-y-auto">
             {messages.length === 0 ? (
