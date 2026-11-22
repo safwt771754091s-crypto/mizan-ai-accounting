@@ -1,0 +1,255 @@
+import type { DatasetSchema, ImportDataset } from "./types";
+
+const entryFields = [
+  {
+    key: "entryNumber",
+    label: "رقم القيد",
+    type: "text" as const,
+    required: false,
+    aliases: ["رقم القيد", "القيد", "رقم المستند", "رقم السند", "entry no", "entry number", "voucher no", "journal no", "reference no"],
+  },
+  {
+    key: "date",
+    label: "التاريخ",
+    type: "date" as const,
+    required: true,
+    aliases: ["التاريخ", "تاريخ القيد", "تاريخ العملية", "date", "entry date", "transaction date", "posting date"],
+  },
+  {
+    key: "description",
+    label: "البيان",
+    type: "text" as const,
+    required: true,
+    aliases: ["البيان", "الوصف", "التفاصيل", "شرح", "بيان القيد", "description", "narration", "details", "memo", "particulars"],
+  },
+  {
+    key: "accountCode",
+    label: "رقم الحساب",
+    type: "text" as const,
+    required: true,
+    aliases: ["رقم الحساب", "كود الحساب", "رمز الحساب", "دليل الحسابات", "account code", "account no", "account number", "gl code"],
+  },
+  {
+    key: "accountName",
+    label: "اسم الحساب",
+    type: "text" as const,
+    required: false,
+    aliases: ["اسم الحساب", "الحساب", "account name", "account", "ledger"],
+  },
+  {
+    key: "debit",
+    label: "مدين",
+    type: "money" as const,
+    required: false,
+    aliases: ["مدين", "المدين", "قيمة مدين", "debit", "dr", "debit amount"],
+  },
+  {
+    key: "credit",
+    label: "دائن",
+    type: "money" as const,
+    required: false,
+    aliases: ["دائن", "الدائن", "قيمة دائن", "credit", "cr", "credit amount"],
+  },
+  {
+    key: "reference",
+    label: "المرجع / رقم الفاتورة",
+    type: "text" as const,
+    required: false,
+    aliases: ["المرجع", "رقم الفاتورة", "رقم المستند", "رقم السند", "reference", "invoice no", "invoice number", "doc no", "document no"],
+  },
+  {
+    key: "costCenter",
+    label: "مركز التكلفة",
+    type: "text" as const,
+    required: false,
+    aliases: ["مركز التكلفة", "cost center", "cost centre", "cc"],
+  },
+  {
+    key: "branch",
+    label: "الفرع",
+    type: "text" as const,
+    required: false,
+    aliases: ["الفرع", "فرع", "branch", "location"],
+  },
+];
+
+const invoiceFields = [
+  {
+    key: "date",
+    label: "التاريخ",
+    type: "date" as const,
+    required: true,
+    aliases: ["التاريخ", "تاريخ الفاتورة", "date", "invoice date"],
+  },
+  {
+    key: "reference",
+    label: "رقم الفاتورة",
+    type: "text" as const,
+    required: true,
+    aliases: ["رقم الفاتورة", "الفاتورة", "invoice no", "invoice number", "reference"],
+  },
+  {
+    key: "description",
+    label: "البيان",
+    type: "text" as const,
+    required: false,
+    aliases: ["البيان", "الوصف", "description", "details"],
+  },
+  {
+    key: "party",
+    label: "العميل / المورد",
+    type: "text" as const,
+    required: false,
+    aliases: ["العميل", "اسم العميل", "المورد", "اسم المورد", "customer", "client", "supplier", "vendor"],
+  },
+  {
+    key: "amount",
+    label: "المبلغ",
+    type: "money" as const,
+    required: true,
+    aliases: ["المبلغ", "الإجمالي", "القيمة", "amount", "total", "gross"],
+  },
+  {
+    key: "tax",
+    label: "الضريبة",
+    type: "money" as const,
+    required: false,
+    aliases: ["الضريبة", "ضريبة القيمة المضافة", "vat", "tax"],
+  },
+  {
+    key: "debitAccount",
+    label: "الحساب المدين",
+    type: "text" as const,
+    required: false,
+    aliases: ["الحساب المدين", "حساب المدين", "debit account", "dr account"],
+  },
+  {
+    key: "creditAccount",
+    label: "الحساب الدائن",
+    type: "text" as const,
+    required: false,
+    aliases: ["الحساب الدائن", "حساب الدائن", "credit account", "cr account"],
+  },
+];
+
+export const DATASET_SCHEMAS: Record<ImportDataset, DatasetSchema> = {
+  trial_balance: {
+    dataset: "trial_balance",
+    label: "ميزان المراجعة",
+    description: "أرصدة أو مجاميع الحسابات. يُنشئ دليل الحسابات والأرصدة الافتتاحية.",
+    fields: [
+      { key: "accountCode", label: "رقم الحساب", type: "text", required: true, aliases: ["رقم الحساب", "كود الحساب", "رمز الحساب", "account code", "account no", "code"] },
+      { key: "accountName", label: "اسم الحساب", type: "text", required: true, aliases: ["اسم الحساب", "الحساب", "account name", "account"] },
+      { key: "debit", label: "مدين", type: "money", required: false, aliases: ["مدين", "المدين", "مدين افتتاحي", "debit", "dr", "opening debit"] },
+      { key: "credit", label: "دائن", type: "money", required: false, aliases: ["دائن", "الدائن", "دائن افتتاحي", "credit", "cr", "opening credit"] },
+      { key: "balance", label: "الرصيد", type: "money", required: false, aliases: ["الرصيد", "الرصيد الصافي", "صافي الرصيد", "balance", "net balance", "closing balance"] },
+      { key: "accountType", label: "نوع الحساب", type: "text", required: false, aliases: ["نوع الحساب", "التصنيف", "account type", "type", "category"] },
+    ],
+    duplicateKeys: ["accountCode"],
+  },
+  general_ledger: {
+    dataset: "general_ledger",
+    label: "دفتر الأستاذ",
+    description: "حركات الحسابات. تُجمّع في قيود حسب رقم القيد أو التاريخ والبيان.",
+    fields: entryFields,
+    duplicateKeys: ["entryNumber", "accountCode", "debit", "credit", "date"],
+  },
+  journal_entries: {
+    dataset: "journal_entries",
+    label: "القيود اليومية",
+    description: "قيود محاسبية كاملة بسطور مدين ودائن.",
+    fields: entryFields,
+    duplicateKeys: ["entryNumber", "accountCode", "debit", "credit"],
+  },
+  sales: {
+    dataset: "sales",
+    label: "المبيعات",
+    description: "فواتير المبيعات. تُنشئ قيوداً إذا تحددت حسابات المدين والدائن.",
+    fields: invoiceFields,
+    duplicateKeys: ["reference", "date", "amount"],
+  },
+  purchases: {
+    dataset: "purchases",
+    label: "المشتريات",
+    description: "فواتير المشتريات والموردين. تُنشئ قيوداً إذا تحددت الحسابات.",
+    fields: invoiceFields,
+    duplicateKeys: ["reference", "date", "amount"],
+  },
+  expenses: {
+    dataset: "expenses",
+    label: "المصروفات",
+    description: "سندات ومصروفات. تُنشئ قيوداً إذا تحدد حساب المصروف والحساب الدائن.",
+    fields: [
+      { key: "date", label: "التاريخ", type: "date", required: true, aliases: ["التاريخ", "تاريخ المصروف", "date"] },
+      { key: "description", label: "البيان", type: "text", required: true, aliases: ["البيان", "الوصف", "description", "details"] },
+      { key: "reference", label: "رقم المستند", type: "text", required: false, aliases: ["رقم المستند", "رقم السند", "المرجع", "reference", "voucher no"] },
+      { key: "amount", label: "المبلغ", type: "money", required: true, aliases: ["المبلغ", "القيمة", "amount", "total"] },
+      { key: "accountCode", label: "رقم حساب المصروف", type: "text", required: false, aliases: ["رقم الحساب", "حساب المصروف", "كود الحساب", "account code", "expense account"] },
+      { key: "debitAccount", label: "الحساب المدين", type: "text", required: false, aliases: ["الحساب المدين", "debit account"] },
+      { key: "creditAccount", label: "الحساب الدائن", type: "text", required: false, aliases: ["الحساب الدائن", "credit account"] },
+      { key: "party", label: "المورد", type: "text", required: false, aliases: ["المورد", "supplier", "vendor"] },
+    ],
+    duplicateKeys: ["reference", "date", "amount"],
+  },
+  customers: {
+    dataset: "customers",
+    label: "العملاء",
+    description: "بيانات العملاء وأرصدتهم.",
+    fields: [
+      { key: "code", label: "رمز العميل", type: "text", required: false, aliases: ["رمز العميل", "كود العميل", "customer code", "code"] },
+      { key: "name", label: "اسم العميل", type: "text", required: true, aliases: ["اسم العميل", "العميل", "customer name", "customer", "name"] },
+      { key: "phone", label: "الهاتف", type: "text", required: false, aliases: ["الهاتف", "الجوال", "phone", "mobile"] },
+      { key: "email", label: "البريد الإلكتروني", type: "text", required: false, aliases: ["البريد", "البريد الإلكتروني", "email"] },
+      { key: "balance", label: "الرصيد", type: "money", required: false, aliases: ["الرصيد", "المديونية", "balance", "outstanding"] },
+    ],
+    duplicateKeys: ["name", "phone"],
+  },
+  suppliers: {
+    dataset: "suppliers",
+    label: "الموردون",
+    description: "بيانات الموردين وأرصدتهم.",
+    fields: [
+      { key: "code", label: "رمز المورد", type: "text", required: false, aliases: ["رمز المورد", "كود المورد", "supplier code", "code"] },
+      { key: "name", label: "اسم المورد", type: "text", required: true, aliases: ["اسم المورد", "المورد", "supplier name", "supplier", "vendor", "name"] },
+      { key: "phone", label: "الهاتف", type: "text", required: false, aliases: ["الهاتف", "الجوال", "phone", "mobile"] },
+      { key: "email", label: "البريد الإلكتروني", type: "text", required: false, aliases: ["البريد", "البريد الإلكتروني", "email"] },
+      { key: "balance", label: "الرصيد", type: "money", required: false, aliases: ["الرصيد", "المستحق", "balance", "outstanding"] },
+    ],
+    duplicateKeys: ["name", "phone"],
+  },
+  inventory: {
+    dataset: "inventory",
+    label: "المخزون",
+    description: "أصناف المخزون والكميات والتكاليف.",
+    fields: [
+      { key: "code", label: "رمز الصنف", type: "text", required: true, aliases: ["رمز الصنف", "كود الصنف", "sku", "item code", "code"] },
+      { key: "name", label: "اسم الصنف", type: "text", required: true, aliases: ["اسم الصنف", "الصنف", "item name", "item", "name"] },
+      { key: "unit", label: "الوحدة", type: "text", required: false, aliases: ["الوحدة", "unit", "uom"] },
+      { key: "quantity", label: "الكمية", type: "number", required: false, aliases: ["الكمية", "quantity", "qty", "on hand"] },
+      { key: "cost", label: "تكلفة الوحدة", type: "money", required: false, aliases: ["التكلفة", "تكلفة الوحدة", "cost", "unit cost"] },
+      { key: "price", label: "سعر البيع", type: "money", required: false, aliases: ["سعر البيع", "السعر", "price", "selling price"] },
+      { key: "value", label: "قيمة المخزون", type: "money", required: false, aliases: ["القيمة", "قيمة المخزون", "value", "total value"] },
+    ],
+    duplicateKeys: ["code"],
+  },
+  bank_statement: {
+    dataset: "bank_statement",
+    label: "كشف البنك",
+    description: "حركات كشف الحساب البنكي للمطابقة.",
+    fields: [
+      { key: "date", label: "التاريخ", type: "date", required: true, aliases: ["التاريخ", "تاريخ العملية", "date"] },
+      { key: "description", label: "البيان", type: "text", required: true, aliases: ["البيان", "الوصف", "description", "details", "narration"] },
+      { key: "reference", label: "المرجع", type: "text", required: false, aliases: ["المرجع", "رقم العملية", "reference", "transaction id"] },
+      { key: "debit", label: "مدين (سحب)", type: "money", required: false, aliases: ["مدين", "سحب", "خصم", "debit", "withdrawal"] },
+      { key: "credit", label: "دائن (إيداع)", type: "money", required: false, aliases: ["دائن", "إيداع", "credit", "deposit"] },
+      { key: "balance", label: "الرصيد", type: "money", required: false, aliases: ["الرصيد", "balance"] },
+    ],
+    duplicateKeys: ["date", "description", "debit", "credit"],
+  },
+};
+
+export const DATASET_LIST = Object.values(DATASET_SCHEMAS);
+
+export function schemaFor(dataset: ImportDataset): DatasetSchema {
+  return DATASET_SCHEMAS[dataset];
+}
