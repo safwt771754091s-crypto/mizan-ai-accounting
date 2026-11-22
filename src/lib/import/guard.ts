@@ -15,7 +15,9 @@ export interface PostingIssue {
 export function checkPostableEntries(entries: ImportEntryDraft[]): PostingIssue[] {
   const issues: PostingIssue[] = [];
   for (const entry of entries) {
-    const lines = entry.lines ?? [];
+    // السطور الصفرية لا تحمل مبلغاً ولا تُبطل القيد؛ تُستبعد من الفحص بدل رفض الاستيراد كله
+    const lines = (entry.lines ?? []).filter((line) => !dec(line.debit).isZero() || !dec(line.credit).isZero());
+    if (!lines.length) continue;
     if (lines.length < 2) {
       issues.push({
         entryNumber: entry.entryNumber,
@@ -39,13 +41,6 @@ export function checkPostableEntries(entries: ImportEntryDraft[]): PostingIssue[
           entryNumber: entry.entryNumber,
           code: "NEGATIVE_AMOUNT",
           message: `القيد ${entry.entryNumber} يحتوي مبلغاً سالباً.`,
-        });
-      }
-      if (debit.isZero() && credit.isZero()) {
-        issues.push({
-          entryNumber: entry.entryNumber,
-          code: "ZERO_LINE",
-          message: `القيد ${entry.entryNumber} يحتوي سطراً بمبلغ صفر.`,
         });
       }
       if (!debit.isZero() && !credit.isZero()) {
