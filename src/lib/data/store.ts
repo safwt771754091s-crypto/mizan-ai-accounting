@@ -72,6 +72,11 @@ async function load(): Promise<DemoStore> {
     try {
       const parsed = JSON.parse(await fs.readFile(file, "utf8")) as DemoStore;
       if (parsed?.version === 1) {
+        // ملفات قديمة قد تسبق إضافة الأدوار المخصصة — نطبّع الحقول الجديدة.
+        if (!Array.isArray(parsed.roles)) parsed.roles = [];
+        for (const member of parsed.members) {
+          if (member.customRoleId === undefined) member.customRoleId = null;
+        }
         state.cache = parsed;
         state.signature = current;
         return parsed;

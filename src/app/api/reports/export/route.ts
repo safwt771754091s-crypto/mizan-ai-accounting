@@ -1,6 +1,7 @@
 import ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 import { getCurrentUser } from "@/lib/auth";
+import { assertCompanyPermission } from "@/lib/auth/permissions";
 import { getRepository } from "@/lib/data/repository";
 import { buildReportData } from "@/lib/reports/build";
 import type { StatementLine } from "@/lib/accounting/types";
@@ -52,8 +53,9 @@ export async function GET(request: Request) {
   if (!companyId) return NextResponse.json({ ok: false, error: "معرّف الشركة مطلوب." }, { status: 400 });
 
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, companyId);
-  if (!access) return NextResponse.json({ ok: false, error: "لا تملك صلاحية الوصول." }, { status: 403 });
+  const gate = await assertCompanyPermission(user, companyId, "reports.export");
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  const access = gate.state.access;
 
   const company = access.company;
   const period = {

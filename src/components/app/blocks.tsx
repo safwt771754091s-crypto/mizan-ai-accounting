@@ -7,7 +7,7 @@ import { Money, PercentText } from "./money";
 import { Badge, SeverityBadge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { EmptyState } from "@/components/ui/misc";
+import { Alert, EmptyState } from "@/components/ui/misc";
 import { Table, TableWrap, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatDateArabic } from "@/lib/utils/dates";
 
@@ -382,4 +382,23 @@ export function MetricCard({
 
 export function PercentCell({ value }: { value: number | null }) {
   return <PercentText value={value} />;
+}
+
+export function AccessDenied({
+  title = "لا تملك صلاحية الوصول",
+  description = "هذه الصفحة تتطلب صلاحية لا يمنحها دورك الحالي. تواصل مع مالك الشركة أو مديرها.",
+}: {
+  title?: string;
+  description?: string;
+}) {
+  return (
+    <div className="mx-auto max-w-xl py-16">
+      <Alert variant="warning" title={title}>
+        {description}
+      </Alert>
+      <p className="mt-3 text-center text-[11px] text-muted">
+        التحقق يتم على الخادم أيضاً، ولا يكفي إخفاء العنصر في الواجهة.
+      </p>
+    </div>
+  );
 }

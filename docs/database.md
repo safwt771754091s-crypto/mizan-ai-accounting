@@ -7,6 +7,7 @@
 | `0001_core.sql` | الملفات الشخصية، الشركات، الأعضاء، الفترات، الملفات والاستيراد |
 | `0002_ledger.sql` | دليل الحسابات، القيود وسطورها، نتائج التحليل والتقارير |
 | `0003_security.sql` | دوال الصلاحيات وسياسات RLS والفهارس |
+| `0004_rbac.sql` | الأدوار والصلاحيات والأدوار المخصصة (`roles`, `role_permissions`, `user_roles`) ودالة `has_permission` |
 
 ## الجداول
 
@@ -16,7 +17,10 @@
 | --- | --- |
 | `profiles` | `id` (= auth.users)، `email`، `full_name`، `is_super_admin` |
 | `companies` | `name`، `legal_name`، `activity_type`، `country`، `currency`، `fiscal_year_start/end`، `entity_type`، `status`، `created_by` |
-| `company_members` | `company_id`، `user_id`، `role` (`owner/admin/accountant/auditor/viewer`) — فريد (شركة، مستخدم) |
+| `company_members` | `company_id`، `user_id`، `role` (`owner/admin/senior_accountant/accountant/auditor/viewer`)، `custom_role_id` — فريد (شركة، مستخدم) |
+| `roles` | `company_id` (فارغ للأدوار النظامية)، `key`، `name`، `is_system`، `created_by` |
+| `role_permissions` | `role_id` + `permission` (مفتاح مركب) |
+| `user_roles` | `user_id`، `role_id`، `company_id`، `branch_id` — أدوار متعددة ونطاق فرع |
 | `accounting_periods` | `company_id`، `label`، `start_date`، `end_date`، `is_closed` |
 
 ### المحاسبة

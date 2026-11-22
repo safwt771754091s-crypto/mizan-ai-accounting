@@ -1,15 +1,22 @@
 import type { Account, AccountingPeriod, JournalEntry } from "@/lib/accounting/types";
+import type { CompanyRole, Permission } from "@/lib/auth/permission-catalog";
+import { ROLE_LABELS } from "@/lib/auth/permission-catalog";
 import type { ImportBatchRecord, NormalizedRow } from "@/lib/import/types";
 
-export type MemberRole = "owner" | "admin" | "accountant" | "auditor" | "viewer";
+export type MemberRole = CompanyRole;
 
-export const MEMBER_ROLE_LABELS: Record<MemberRole, string> = {
-  owner: "مالك",
-  admin: "مدير",
-  accountant: "محاسب",
-  auditor: "مراجع",
-  viewer: "مشاهد",
-};
+export const MEMBER_ROLE_LABELS = ROLE_LABELS;
+
+/** دور مخصص داخل شركة؛ صلاحياته تستبدل صلاحيات الدور النظامي. */
+export interface CustomRole {
+  id: string;
+  companyId: string;
+  name: string;
+  description?: string | null;
+  permissions: Permission[];
+  createdAt: string;
+  createdBy: string;
+}
 
 export const COMPANY_STATUS_LABELS: Record<string, string> = {
   active: "نشطة",
@@ -52,6 +59,7 @@ export interface CompanyMember {
   companyId: string;
   userId: string;
   role: MemberRole;
+  customRoleId?: string | null;
   createdAt: string;
 }
 
@@ -106,6 +114,7 @@ export interface DemoStore {
   users: Array<AppUser & { passwordHash: string }>;
   companies: Company[];
   members: CompanyMember[];
+  roles: CustomRole[];
   data: Record<string, CompanyData>;
   activity: ActivityLog[];
 }
@@ -131,7 +140,7 @@ export interface ImportSaveInput {
 }
 
 export function canWrite(role: MemberRole): boolean {
-  return role === "owner" || role === "admin" || role === "accountant";
+  return role === "owner" || role === "admin" || role === "senior_accountant" || role === "accountant";
 }
 
 export function canManageUsers(role: MemberRole): boolean {

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { z } from "zod";
 import { getCurrentUser } from "@/lib/auth";
+import { assertCompanyPermission } from "@/lib/auth/permissions";
 import { getRepository } from "@/lib/data/repository";
 import { buildAssistantContext } from "@/lib/ai/context";
 import { askAssistant } from "@/lib/ai/agent";
@@ -37,8 +38,9 @@ export async function POST(request: Request) {
 
   const { companyId, question } = parsed.data;
   const repo = getRepository();
-  const access = await repo.getCompanyAccess(user.id, companyId);
-  if (!access) return NextResponse.json({ ok: false, error: "لا تملك صلاحية الوصول إلى هذه الشركة." }, { status: 403 });
+  const gate = await assertCompanyPermission(user, companyId, "reports.view");
+  if (!gate.ok) return NextResponse.json({ ok: false, error: gate.error }, { status: gate.status });
+  const access = gate.state.access;
 
   const company = access.company;
   const period = {
