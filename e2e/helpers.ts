@@ -1,6 +1,6 @@
 import { expect, type Page } from "@playwright/test";
 
-export const DEMO_EMAIL = "demo@mizan.ai";
+export const DEMO_EMAIL = "demo@rakaz.ai";
 export const DEMO_PASSWORD = "Demo1234!";
 
 export async function login(page: Page, email = DEMO_EMAIL, password = DEMO_PASSWORD) {

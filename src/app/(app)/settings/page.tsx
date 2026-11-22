@@ -98,7 +98,7 @@ export default async function SettingsPage({
               </div>
               <Status ok={isSupabaseConfigured()} label="NEXT_PUBLIC_SUPABASE_URL / ANON_KEY" />
               <Status ok={Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)} label="SUPABASE_SERVICE_ROLE_KEY (اختياري)" />
-              <Status ok={Boolean(process.env.MIZAN_DEMO_SESSION_SECRET)} label="MIZAN_DEMO_SESSION_SECRET" />
+              <Status ok={Boolean(process.env.RAKAZ_DEMO_SESSION_SECRET)} label="RAKAZ_DEMO_SESSION_SECRET" />
               <p className="text-[10px] leading-5 text-muted">
                 للتبديل إلى Supabase: اضبط المتغيرات ثم شغّل المخطط من <code dir="ltr">supabase/migrations</code>.
               </p>

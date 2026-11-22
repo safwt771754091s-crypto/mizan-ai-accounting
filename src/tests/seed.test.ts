@@ -7,10 +7,10 @@ import { buildTrialBalance } from "@/lib/accounting/engine";
 import { detectAuditFindings } from "@/lib/accounting/findings";
 import type { Ledger } from "@/lib/accounting/types";
 
-const useRealStore = process.env.MIZAN_SEED_TARGET === "store";
-process.env.MIZAN_DATA_DIR = useRealStore
-  ? path.join(process.cwd(), ".mizan-data")
-  : mkdtempSync(path.join(tmpdir(), "mizan-seed-"));
+const useRealStore = (process.env.RAKAZ_SEED_TARGET ?? process.env.MIZAN_SEED_TARGET) === "store";
+process.env.RAKAZ_DATA_DIR = useRealStore
+  ? path.join(process.cwd(), ".rakaz-data")
+  : mkdtempSync(path.join(tmpdir(), "rakaz-seed-"));
 
 describe("تهيئة بيانات العرض التجريبي", () => {
   it("ينشئ مخزن البيانات ويتحقق من سلامة الأرقام", async () => {
@@ -64,7 +64,7 @@ describe("تهيئة بيانات العرض التجريبي", () => {
 
       expect(trial.entryCount).toBeGreaterThan(0);
       expect(Number.isFinite(income.netProfit)).toBe(true);
-      if (company.id !== "co-mizan") {
+      if (company.id !== "co-rakaz") {
         expect(trial.balanced, `${company.name} ميزان`).toBe(true);
         expect(balance.balanced, `${company.name} مركز مالي`).toBe(true);
       }

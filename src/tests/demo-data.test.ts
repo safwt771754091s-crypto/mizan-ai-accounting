@@ -72,8 +72,8 @@ describe("بيانات العرض التجريبية", () => {
     expect(income.netProfit).toBeGreaterThan(0);
   });
 
-  it("تحتوي شركة متجر ميزان على أخطاء مقصودة للفحص", () => {
-    const findings = detectAuditFindings(ledgerFor("co-mizan"), { from: "2025-01-01", to: "2025-12-31" });
+  it("تحتوي شركة متجر ركاز على أخطاء مقصودة للفحص", () => {
+    const findings = detectAuditFindings(ledgerFor("co-rakaz"), { from: "2025-01-01", to: "2025-12-31" });
     expect(findings.some((f) => f.code === "UNBALANCED_ENTRY")).toBe(true);
     expect(findings.some((f) => f.code === "UNKNOWN_ACCOUNT")).toBe(true);
   });

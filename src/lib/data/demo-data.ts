@@ -533,9 +533,9 @@ export function buildDemoCompanies(): Company[] {
       createdBy: "user-demo",
     },
     {
-      id: "co-mizan",
-      name: "متجر ميزان",
-      legalName: "متجر ميزان للأجهزة المكتبية",
+      id: "co-rakaz",
+      name: "متجر ركاز",
+      legalName: "متجر ركاز للأجهزة المكتبية",
       activityType: "تجارة تجزئة",
       country: "SA",
       currency: "SAR",
@@ -545,7 +545,7 @@ export function buildDemoCompanies(): Company[] {
       status: "active",
       taxNumber: "300987654300003",
       phone: "0556677889",
-      email: "owner@mizan-store.example",
+      email: "owner@rakaz-store.example",
       city: "جدة",
       address: "شارع التحلية، جدة",
       notes: "بيانات تجريبية تحتوي على أخطاء مقصودة لاختبار وحدة الفحص.",
@@ -642,10 +642,10 @@ export function buildDemoData(): Record<string, CompanyData> {
     logs: [],
   };
 
-  const mizan: CompanyData = {
-    accounts: buildChart("co-mizan"),
+  const rakazStore: CompanyData = {
+    accounts: buildChart("co-rakaz"),
     entries: makeEntries({
-      companyId: "co-mizan",
+      companyId: "co-rakaz",
       year: 2025,
       seed: 99003,
       baseMonthlySales: 42000,
@@ -678,14 +678,14 @@ export function buildDemoData(): Record<string, CompanyData> {
         retained: 73000,
       },
     }),
-    periods: periods("co-mizan", 2025),
+    periods: periods("co-rakaz", 2025),
     batches: [],
     records: [],
     findingStates: [],
     logs: [],
   };
 
-  return { "co-nakheel": nakheel, "co-ufuq": ufuq, "co-mizan": mizan };
+  return { "co-nakheel": nakheel, "co-ufuq": ufuq, "co-rakaz": rakazStore };
 }
 
 function seedBatches(): { batches: Record<string, ImportBatchRecord[]>; records: Record<string, ImportedRecord[]> } {
@@ -779,7 +779,7 @@ export async function buildDemoStore(): Promise<DemoStore> {
     users: [
       {
         id: "user-demo",
-        email: "demo@mizan.ai",
+        email: "demo@rakaz.ai",
         fullName: "أحمد المحاسب",
         isSuperAdmin: false,
         createdAt: "2025-01-01T00:00:00.000Z",
@@ -787,7 +787,7 @@ export async function buildDemoStore(): Promise<DemoStore> {
       },
       {
         id: "user-auditor",
-        email: "auditor@mizan.ai",
+        email: "auditor@rakaz.ai",
         fullName: "سارة المراجعة",
         isSuperAdmin: false,
         createdAt: "2025-01-05T00:00:00.000Z",
@@ -795,7 +795,7 @@ export async function buildDemoStore(): Promise<DemoStore> {
       },
       {
         id: "user-viewer",
-        email: "viewer@mizan.ai",
+        email: "viewer@rakaz.ai",
         fullName: "خالد المدير",
         isSuperAdmin: false,
         createdAt: "2025-01-06T00:00:00.000Z",
@@ -803,7 +803,7 @@ export async function buildDemoStore(): Promise<DemoStore> {
       },
       {
         id: "user-admin",
-        email: "admin@mizan.ai",
+        email: "admin@rakaz.ai",
         fullName: "مدير المنصة",
         isSuperAdmin: true,
         createdAt: "2025-01-01T00:00:00.000Z",
@@ -814,7 +814,7 @@ export async function buildDemoStore(): Promise<DemoStore> {
     members: [
       { id: "m1", companyId: "co-nakheel", userId: "user-demo", role: "owner", createdAt: "2025-01-02T08:00:00.000Z" },
       { id: "m2", companyId: "co-ufuq", userId: "user-demo", role: "owner", createdAt: "2025-02-11T09:30:00.000Z" },
-      { id: "m3", companyId: "co-mizan", userId: "user-demo", role: "admin", createdAt: "2025-03-05T12:00:00.000Z" },
+      { id: "m3", companyId: "co-rakaz", userId: "user-demo", role: "admin", createdAt: "2025-03-05T12:00:00.000Z" },
       { id: "m4", companyId: "co-nakheel", userId: "user-auditor", role: "auditor", createdAt: "2025-01-05T00:00:00.000Z" },
       { id: "m5", companyId: "co-nakheel", userId: "user-viewer", role: "viewer", createdAt: "2025-01-06T00:00:00.000Z" },
     ],

@@ -10,8 +10,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <Scale className="h-5 w-5" />
           </span>
           <span>
-            <span className="block text-base font-bold text-brand-950">ميزان</span>
-            <span className="block text-[9px] tracking-[0.2em] text-teal-700">MIZAN AI</span>
+            <span className="block text-base font-bold text-brand-950">ركاز</span>
+            <span className="block text-[9px] tracking-[0.2em] text-teal-700">RAKAZ AI</span>
           </span>
         </Link>
         <div className="w-full max-w-md">{children}</div>

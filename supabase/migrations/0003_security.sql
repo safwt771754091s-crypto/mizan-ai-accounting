@@ -1,4 +1,4 @@
--- Mizan AI — 0003: دوال الصلاحيات وسياسات RLS والتخزين
+-- RAKAZ AI — 0003: دوال الصلاحيات وسياسات RLS والتخزين
 create or replace function public.is_company_member(target uuid)
 returns boolean
 language sql

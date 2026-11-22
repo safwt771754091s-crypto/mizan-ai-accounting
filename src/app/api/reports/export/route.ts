@@ -70,7 +70,7 @@ export async function GET(request: Request) {
   const report = buildReportData({ company, data, ledger, period });
 
   const workbook = new ExcelJS.Workbook();
-  workbook.creator = "Mizan AI";
+  workbook.creator = "RAKAZ AI";
   workbook.created = new Date();
 
   const summary = workbook.addWorksheet("الملخص", { views: [{ rightToLeft: true }] });
@@ -80,7 +80,7 @@ export async function GET(request: Request) {
   ];
   summary.mergeCells("A1:B1");
   const title = summary.getCell("A1");
-  title.value = `تقرير Mizan AI — ${company.name}`;
+  title.value = `تقرير RAKAZ AI — ${company.name}`;
   title.font = { bold: true, size: 16, color: { argb: "FFFFFFFF" } };
   title.fill = { type: "pattern", pattern: "solid", fgColor: { argb: BRAND } };
   title.alignment = { horizontal: "center", vertical: "middle" };
@@ -192,7 +192,7 @@ export async function GET(request: Request) {
   for (const limitation of report.limitations) recommendations.addRow([limitation]);
 
   const buffer = await workbook.xlsx.writeBuffer();
-  const fileName = `mizan-report-${company.id}-${period.from}-${period.to}.xlsx`;
+  const fileName = `rakaz-report-${company.id}-${period.from}-${period.to}.xlsx`;
 
   return new Response(new Uint8Array(buffer as ArrayBuffer), {
     headers: {

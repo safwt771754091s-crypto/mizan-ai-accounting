@@ -16,3 +16,5 @@ next-env.d.ts
 .vercel
 .agent_tmp/
 .mizan-data/
+.rakaz-data/
+.openhands/

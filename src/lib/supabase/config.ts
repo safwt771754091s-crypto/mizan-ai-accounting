@@ -5,7 +5,7 @@ export function isSupabaseConfigured(): boolean {
 }
 
 export function dataMode(): DataMode {
-  const explicit = process.env.MIZAN_DATA_MODE?.trim();
+  const explicit = (process.env.RAKAZ_DATA_MODE ?? process.env.MIZAN_DATA_MODE)?.trim();
   if (explicit === "supabase") return "supabase";
   if (explicit === "demo") return "demo";
   return isSupabaseConfigured() ? "supabase" : "demo";

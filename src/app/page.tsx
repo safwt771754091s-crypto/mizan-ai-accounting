@@ -68,8 +68,8 @@ export default async function LandingPage() {
               <Scale className="h-5 w-5" />
             </span>
             <div>
-              <p className="text-sm font-bold text-white">ميزان</p>
-              <p className="text-[9px] tracking-[0.2em] text-teal-200/80">MIZAN AI</p>
+              <p className="text-sm font-bold text-white">ركاز</p>
+              <p className="text-[9px] tracking-[0.2em] text-teal-200/80">RAKAZ AI</p>
             </div>
           </div>
           <nav className="flex items-center gap-2">
@@ -102,10 +102,10 @@ export default async function LandingPage() {
           <div>
             <span className="inline-flex items-center gap-2 rounded-full border border-teal-400/30 bg-teal-500/10 px-3 py-1 text-[11px] font-semibold text-teal-100">
               <CheckCircle2 className="h-3.5 w-3.5" />
-              منصة تحليل محاسبي عربية — تعمل ببياناتك
+              ركاز — منصة الذكاء المحاسبي والمالي
             </span>
             <h1 className="mt-5 text-3xl font-bold leading-[1.25] text-white sm:text-4xl lg:text-5xl">
-              ميزان الذكية
+              ركاز
               <span className="mt-2 block text-2xl font-semibold text-teal-200 sm:text-3xl">
                 من الأرقام إلى قرار مالي واضح
               </span>
@@ -230,7 +230,7 @@ export default async function LandingPage() {
               <div className="flex items-center justify-between gap-3">
                 <span className="text-muted">البريد</span>
                 <code dir="ltr" className="rounded bg-white px-2 py-1 font-mono text-[11px] text-brand-900">
-                  demo@mizan.ai
+                  demo@rakaz.ai
                 </code>
               </div>
               <div className="flex items-center justify-between gap-3">
@@ -263,7 +263,7 @@ export default async function LandingPage() {
 
       <footer className="border-t border-line bg-white py-8">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 text-center text-[11px] text-muted sm:flex-row lg:px-8">
-          <p>© {new Date().getFullYear()} Mizan AI — منصة ميزان الذكية للتحليل المحاسبي والمالي.</p>
+          <p>© {new Date().getFullYear()} ركاز | RAKAZ AI — منصة الذكاء المحاسبي والمالي.</p>
           <p>بُني بـ Next.js وTypeScript وSupabase — واجهة عربية RTL.</p>
         </div>
       </footer>

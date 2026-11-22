@@ -22,7 +22,7 @@ const PROTECTED_PREFIXES = [
 const AUTH_PAGES = ["/login", "/register"];
 
 function hasSession(request: NextRequest): boolean {
-  if (request.cookies.has("mizan_session")) return true;
+  if (request.cookies.has("rakaz_session")) return true;
   return request.cookies.getAll().some((cookie) => cookie.name.startsWith("sb-") && cookie.name.includes("auth-token"));
 }
 

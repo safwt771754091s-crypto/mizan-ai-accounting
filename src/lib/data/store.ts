@@ -3,7 +3,8 @@ import path from "node:path";
 import { buildDemoStore } from "./demo-data";
 import type { DemoStore } from "./types";
 
-const STORE_DIR = process.env.MIZAN_DATA_DIR ?? path.join(process.cwd(), ".mizan-data");
+const STORE_DIR =
+  process.env.RAKAZ_DATA_DIR ?? process.env.MIZAN_DATA_DIR ?? path.join(process.cwd(), ".rakaz-data");
 const STORE_FILE = path.join(STORE_DIR, "demo-store.json");
 
 let cache: DemoStore | null = null;

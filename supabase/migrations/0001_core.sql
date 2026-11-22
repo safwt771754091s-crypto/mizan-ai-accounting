@@ -1,4 +1,4 @@
--- Mizan AI — 0001: الملفات الشخصية والشركات ودليل الحسابات
+-- RAKAZ AI — 0001: الملفات الشخصية والشركات ودليل الحسابات
 create extension if not exists "pgcrypto";
 
 create table if not exists public.profiles (
