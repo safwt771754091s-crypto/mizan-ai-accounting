@@ -23,7 +23,7 @@ test.describe("المصادقة", () => {
   });
 
   test("المشاهد لا يرى إلا الشركات المسموح بها", async ({ page }) => {
-    await login(page, "viewer@mizan.ai", DEMO_PASSWORD);
+    await login(page, "viewer@rakaz.ai", DEMO_PASSWORD);
     await page.goto("/companies");
     await expect(page.getByRole("heading", { name: /شركة النخيل للتجارة/ }).first()).toBeVisible();
     await expect(page.getByText("مؤسسة الأفق للمقاولات")).toHaveCount(0);

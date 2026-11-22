@@ -1,4 +1,4 @@
-# قاعدة البيانات — Mizan AI
+# قاعدة البيانات — RAKAZ AI
 
 المخطط في `supabase/migrations/`:
 

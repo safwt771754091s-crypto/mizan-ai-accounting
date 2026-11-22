@@ -1,12 +1,9 @@
-import type { Metadata } from "next";
 import { Suspense } from "react";
 import { requireUser } from "@/lib/auth";
 import { getRepository } from "@/lib/data/repository";
 import { detectAuditFindings } from "@/lib/accounting/findings";
 import { dataMode } from "@/lib/supabase/config";
 import { AppShell } from "@/components/app/app-shell";
-
-export const metadata: Metadata = { title: "لوحة التحكم" };
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const user = await requireUser();

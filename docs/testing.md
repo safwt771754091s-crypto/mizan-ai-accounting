@@ -1,4 +1,4 @@
-# الاختبارات — Mizan AI
+# الاختبارات — RAKAZ AI
 
 ## 1. اختبارات الوحدة (Vitest)
 
@@ -33,7 +33,7 @@ npx playwright install chromium   # مرة واحدة
 npm run test:e2e
 ```
 
-- الخادم يعمل تلقائياً على المنفذ `3100` بوضع `MIZAN_DATA_MODE=demo`.
+- الخادم يعمل تلقائياً على المنفذ `3100` بوضع `RAKAZ_DATA_MODE=demo`.
 - `reuseExistingServer` مفعّل، لذا لا تترك خادماً على 3100 أثناء التطوير إلا إذا أردت
   استخدامه.
 - التتبع والصور تُحفظ عند الفشل في `test-results/`.

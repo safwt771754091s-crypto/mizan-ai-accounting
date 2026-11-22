@@ -77,8 +77,8 @@ export default async function ReportsPage({
                   <Scale className="h-5 w-5 text-teal-200" />
                 </span>
                 <div>
-                  <p className="text-sm font-bold">ميزان</p>
-                  <p className="text-[9px] tracking-[0.2em] text-teal-200/80">MIZAN AI</p>
+                  <p className="text-sm font-bold">ركاز</p>
+                  <p className="text-[9px] tracking-[0.2em] text-teal-200/80">RAKAZ AI</p>
                 </div>
               </div>
               <p className="text-[11px] font-semibold uppercase tracking-widest text-teal-200">تقرير التحليل المالي</p>
@@ -389,7 +389,7 @@ export default async function ReportsPage({
               <p key={limitation}>• {limitation}</p>
             ))}
             <div className="mt-3 rounded-xl border border-warning-100 bg-warning-50 p-3 text-warning-600">
-              هذا التقرير أُعد بواسطة منصة Mizan AI كتحليل مساعد بناءً على البيانات المقدمة، ولا يُعد رأياً قانونياً أو
+              هذا التقرير أُعد بواسطة منصة RAKAZ AI كتحليل مساعد بناءً على البيانات المقدمة، ولا يُعد رأياً قانونياً أو
               محاسبياً مستقلاً، ولا يغني عن مراجعة محاسب قانوني مرخّص.
             </div>
           </CardContent>

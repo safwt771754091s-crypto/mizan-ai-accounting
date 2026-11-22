@@ -3,8 +3,8 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { beforeAll, describe, expect, it } from "vitest";
 
-process.env.MIZAN_DATA_DIR = mkdtempSync(path.join(tmpdir(), "mizan-repo-"));
-process.env.MIZAN_DATA_MODE = "demo";
+process.env.RAKAZ_DATA_DIR = mkdtempSync(path.join(tmpdir(), "rakaz-repo-"));
+process.env.RAKAZ_DATA_MODE = "demo";
 
 let repo: import("@/lib/data/repository").Repository;
 
@@ -130,12 +130,12 @@ describe("مستودع البيانات التجريبي", () => {
   });
 
   it("يدير الأعضاء بصلاحيات المالك", async () => {
-    const result = await repo.inviteMember("co-ufuq", "viewer@mizan.ai", "viewer");
+    const result = await repo.inviteMember("co-ufuq", "viewer@rakaz.ai", "viewer");
     expect(result.ok).toBe(true);
     const members = await repo.listMembers("co-ufuq");
-    expect(members.some((member) => member.user.email === "viewer@mizan.ai")).toBe(true);
+    expect(members.some((member) => member.user.email === "viewer@rakaz.ai")).toBe(true);
 
-    const again = await repo.inviteMember("co-ufuq", "viewer@mizan.ai", "viewer");
+    const again = await repo.inviteMember("co-ufuq", "viewer@rakaz.ai", "viewer");
     expect(again.ok).toBe(false);
   });
 });
