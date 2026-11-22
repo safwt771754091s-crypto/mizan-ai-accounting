@@ -28,4 +28,24 @@ test.describe("المصادقة", () => {
     await expect(page.getByRole("heading", { name: /شركة النخيل للتجارة/ }).first()).toBeVisible();
     await expect(page.getByText("مؤسسة الأفق للمقاولات")).toHaveCount(0);
   });
+
+  test("إنشاء حساب جديد يفتح خطوة إضافة الشركة", async ({ page }) => {
+    await page.goto("/register");
+    await page.getByLabel("الاسم الكامل").fill("مستخدم اختبار");
+    await page.getByLabel("البريد الإلكتروني").fill(`new-${Date.now()}@example.com`);
+    await page.getByLabel("كلمة المرور").fill("Test1234!");
+    await page.getByRole("button", { name: "إنشاء الحساب" }).click();
+    await expect(page).toHaveURL(/\/companies\/new/);
+    await expect(page.getByRole("heading", { name: "إنشاء شركة جديدة" })).toBeVisible();
+  });
+
+  test("ترفض كلمة مرور لا تحقق الشروط", async ({ page }) => {
+    await page.goto("/register");
+    await page.getByLabel("الاسم الكامل").fill("مستخدم اختبار");
+    await page.getByLabel("البريد الإلكتروني").fill(`weak-${Date.now()}@example.com`);
+    await page.getByLabel("كلمة المرور").fill("123");
+    await page.getByRole("button", { name: "إنشاء الحساب" }).click();
+    await expect(page.getByText(/8 أحرف على الأقل/)).toBeVisible();
+    await expect(page).toHaveURL(/\/register/);
+  });
 });

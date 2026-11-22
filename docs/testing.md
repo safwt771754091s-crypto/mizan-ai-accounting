@@ -59,7 +59,7 @@ ESLint        ✅ بلا أخطاء أو تحذيرات
 tsc --noEmit  ✅
 Vitest        ✅ 105 اختباراً في 13 ملفاً
 next build    ✅
-Playwright    ✅ 12 اختباراً
+Playwright    ✅ 18 اختباراً
 ```
 
 ## 4. ما لا تغطيه الاختبارات بعد
