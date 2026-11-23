@@ -10,6 +10,10 @@ import type {
   AppUser,
   Company,
   CompanyData,
+  Proposal,
+  ProposalCategory,
+  ProposalPriority,
+  ProposalStatus,
   CompanyMember,
   AuditLog,
   CompanyWithAccess,
@@ -83,6 +87,24 @@ export interface Repository {
     },
   ): Promise<void>;
   listAudit(companyId: string, limit?: number): Promise<AuditLog[]>;
+  listProposals(companyId: string): Promise<Proposal[]>;
+  createProposal(
+    companyId: string,
+    userId: string,
+    input: { title: string; body: string; category: ProposalCategory; priority: ProposalPriority },
+  ): Promise<Proposal>;
+  setProposalStatus(
+    companyId: string,
+    proposalId: string,
+    status: ProposalStatus,
+    userId: string,
+    note?: string | null,
+  ): Promise<{ ok: boolean; error?: string }>;
+  attachProposalIssue(
+    companyId: string,
+    proposalId: string,
+    issue: { number: number; url: string },
+  ): Promise<{ ok: boolean; error?: string }>;
   setPeriodStatus(
     companyId: string,
     periodId: string,
@@ -642,6 +664,80 @@ class DemoRepository implements Repository {
       period.status = status;
     });
     return found ? { ok: true } : { ok: false, error: "الفترة المالية غير موجودة." };
+  }
+
+  async listProposals(companyId: string): Promise<Proposal[]> {
+    const store = await readStore();
+    return store.proposals
+      .filter((proposal) => proposal.companyId === companyId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }
+
+  async createProposal(
+    companyId: string,
+    userId: string,
+    input: { title: string; body: string; category: ProposalCategory; priority: ProposalPriority },
+  ): Promise<Proposal> {
+    const access = await this.getCompanyAccess(userId, companyId);
+    if (!access) {
+      throw new Error("لا تملك صلاحية تقديم مقترح لهذه الشركة.");
+    }
+    const now = new Date().toISOString();
+    const proposal: Proposal = {
+      id: `prop-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      companyId,
+      title: input.title,
+      body: input.body,
+      category: input.category,
+      priority: input.priority,
+      status: "new",
+      createdBy: userId,
+      createdAt: now,
+      updatedAt: now,
+      decisionNote: null,
+      issueNumber: null,
+      issueUrl: null,
+    };
+    await mutateStore((store) => {
+      store.proposals.push(proposal);
+    });
+    return proposal;
+  }
+
+  async setProposalStatus(
+    companyId: string,
+    proposalId: string,
+    status: ProposalStatus,
+    _userId: string,
+    note?: string | null,
+  ): Promise<{ ok: boolean; error?: string }> {
+    let result: { ok: boolean; error?: string } = { ok: false, error: "المقترح غير موجود." };
+    await mutateStore((store) => {
+      const proposal = store.proposals.find((item) => item.id === proposalId && item.companyId === companyId);
+      if (!proposal) return;
+      proposal.status = status;
+      proposal.updatedAt = new Date().toISOString();
+      if (note !== undefined) proposal.decisionNote = note;
+      result = { ok: true };
+    });
+    return result;
+  }
+
+  async attachProposalIssue(
+    companyId: string,
+    proposalId: string,
+    issue: { number: number; url: string },
+  ): Promise<{ ok: boolean; error?: string }> {
+    let result: { ok: boolean; error?: string } = { ok: false, error: "المقترح غير موجود." };
+    await mutateStore((store) => {
+      const proposal = store.proposals.find((item) => item.id === proposalId && item.companyId === companyId);
+      if (!proposal) return;
+      proposal.issueNumber = issue.number;
+      proposal.issueUrl = issue.url;
+      proposal.updatedAt = new Date().toISOString();
+      result = { ok: true };
+    });
+    return result;
   }
 
   async listUsers(): Promise<AppUser[]> {

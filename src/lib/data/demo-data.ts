@@ -824,6 +824,7 @@ export async function buildDemoStore(): Promise<DemoStore> {
     ],
     roles: [],
     audit: [],
+    proposals: [],
     data,
     activity: [
       {
