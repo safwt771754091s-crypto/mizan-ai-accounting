@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "db:seed": "RAKAZ_SEED_TARGET=store vitest run src/tests/seed.test.ts --reporter=verbose",
-    "ai:check": "node scripts/ai-check.mjs"
+    "ai:check": "node scripts/ai-check.mjs",
+    "db:check": "node scripts/supabase-check.mjs"
   },
   "dependencies": {
     "@radix-ui/react-avatar": "1.3.1",
