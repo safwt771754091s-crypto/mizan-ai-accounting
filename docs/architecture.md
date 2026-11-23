@@ -119,3 +119,10 @@ RAKAZ_DATA_MODE = demo | supabase
 ## الصلاحيات
 
 نظام الصلاحيات (RBAC) موثّق في [`docs/rbac.md`](./rbac.md): كتالوج مركزي، أدوار نظامية ومخصصة، تحقق على الخادم في الصفحات وواجهات API وServer Actions، وRLS في قاعدة البيانات.
+
+## طبقة الرقابة الداخلية (المرحلة 2)
+
+- `src/lib/accounting/workflow.ts`: آلة حالات القيد + `periodStatusForDate`، دوال نقية قابلة للاختبار.
+- `src/app/actions/journal.ts`: Server Actions لكل انتقال مع `assertCompanyPermission` ثم `checkTransition` ثم التحديث ثم `appendAudit`.
+- `src/app/api/import/confirm/route.ts`: يحدد حالة القيود المستوردة بحسب صلاحية الترحيل ويرفض الفترات المغلقة.
+- الواجهات: `/approvals`, `/periods`, `/audit` مع مكوّن عميل واحد مشترك `JournalActionForm`.

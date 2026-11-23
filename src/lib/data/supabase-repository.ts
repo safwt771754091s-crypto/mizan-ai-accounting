@@ -1,4 +1,10 @@
-import type { Account, JournalEntry, Ledger } from "@/lib/accounting/types";
+import type {
+  AccountingPeriodStatus,
+  Account,
+  JournalEntry,
+  JournalEntryStatus,
+  Ledger,
+} from "@/lib/accounting/types";
 import type { Permission } from "@/lib/auth/permission-catalog";
 import type { ImportBatchRecord } from "@/lib/import/types";
 import { createSupabaseServerClient } from "../supabase/server";
@@ -7,6 +13,7 @@ import { canWrite } from "./types";
 import type {
   ActivityLog,
   AppUser,
+  AuditLog,
   Company,
   CompanyData,
   CompanyMember,
@@ -88,6 +95,16 @@ function mapEntry(row: Row, lines: Row[]): JournalEntry {
     exchangeRate: row.exchange_rate ? String(row.exchange_rate) : undefined,
     periodId: row.period_id ? String(row.period_id) : null,
     createdAt: str(row, "created_at"),
+    createdBy: row.created_by ? String(row.created_by) : null,
+    submittedBy: row.submitted_by ? String(row.submitted_by) : null,
+    submittedAt: row.submitted_at ? String(row.submitted_at) : null,
+    approvedBy: row.approved_by ? String(row.approved_by) : null,
+    approvedAt: row.approved_at ? String(row.approved_at) : null,
+    postedBy: row.posted_by ? String(row.posted_by) : null,
+    postedAt: row.posted_at ? String(row.posted_at) : null,
+    rejectedBy: row.rejected_by ? String(row.rejected_by) : null,
+    rejectedAt: row.rejected_at ? String(row.rejected_at) : null,
+    reviewNote: row.review_note ? String(row.review_note) : null,
     lines: lines.map((line) => ({
       id: str(line, "id"),
       entryId: str(line, "entry_id"),
@@ -331,7 +348,12 @@ class SupabaseRepository implements Repository {
     };
   }
 
-  async saveImport(companyId: string, userId: string, input: ImportSaveInput) {
+  async saveImport(
+    companyId: string,
+    userId: string,
+    input: ImportSaveInput,
+    entryStatus: "posted" | "submitted" = "posted",
+  ) {
     const access = await this.getCompanyAccess(userId, companyId);
     if (!access || !canWrite(access.role)) throw new Error("لا تملك صلاحية استيراد البيانات لهذه الشركة.");
     const supabase = await createSupabaseServerClient();
@@ -424,9 +446,11 @@ class SupabaseRepository implements Repository {
             description: draft.description,
             reference: draft.reference ?? null,
             source: input.batch.dataset,
-            status: "posted",
-            currency: access.company.currency,
+            status: entryStatus,
             created_by: userId,
+            submitted_by: entryStatus === "submitted" ? userId : null,
+            submitted_at: entryStatus === "submitted" ? new Date().toISOString() : null,
+            currency: access.company.currency,
           })
           .select("id")
           .single();
@@ -690,6 +714,102 @@ class SupabaseRepository implements Repository {
       .eq("id", memberId)
       .eq("company_id", companyId);
     if (error) return { ok: false, error: "تعذر تعيين الدور المخصص." };
+    return { ok: true };
+  }
+
+  async updateEntryStatus(
+    companyId: string,
+    entryId: string,
+    patch: { status: JournalEntryStatus; userId: string; note?: string | null; at?: string },
+  ): Promise<{ ok: boolean; error?: string }> {
+    const at = patch.at ?? new Date().toISOString();
+    const update: Record<string, unknown> = { status: patch.status };
+    if (patch.status === "submitted") {
+      update.submitted_by = patch.userId;
+      update.submitted_at = at;
+    } else if (patch.status === "approved") {
+      update.approved_by = patch.userId;
+      update.approved_at = at;
+    } else if (patch.status === "rejected") {
+      update.rejected_by = patch.userId;
+      update.rejected_at = at;
+      update.review_note = patch.note ?? null;
+    } else if (patch.status === "posted") {
+      update.posted_by = patch.userId;
+      update.posted_at = at;
+    }
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase
+      .from("journal_entries")
+      .update(update)
+      .eq("id", entryId)
+      .eq("company_id", companyId);
+    if (error) return { ok: false, error: "تعذر تحديث حالة القيد." };
+    return { ok: true };
+  }
+
+  async appendAudit(
+    companyId: string,
+    userId: string,
+    input: {
+      action: string;
+      entity: string;
+      entityId?: string | null;
+      fromStatus?: string | null;
+      toStatus?: string | null;
+      note?: string | null;
+      meta?: Record<string, string | number | boolean | null>;
+    },
+  ): Promise<void> {
+    const supabase = await createSupabaseServerClient();
+    await supabase.from("audit_logs").insert({
+      company_id: companyId,
+      user_id: userId,
+      action: input.action,
+      entity: input.entity,
+      entity_id: input.entityId ?? null,
+      from_status: input.fromStatus ?? null,
+      to_status: input.toStatus ?? null,
+      note: input.note ?? null,
+      meta: input.meta ?? null,
+    });
+  }
+
+  async listAudit(companyId: string, limit = 100): Promise<AuditLog[]> {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("audit_logs")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false })
+      .limit(limit);
+    return ((data ?? []) as Row[]).map((row) => ({
+      id: str(row, "id"),
+      companyId: str(row, "company_id"),
+      userId: str(row, "user_id"),
+      action: str(row, "action"),
+      entity: str(row, "entity"),
+      entityId: row.entity_id ? String(row.entity_id) : null,
+      fromStatus: row.from_status ? String(row.from_status) : null,
+      toStatus: row.to_status ? String(row.to_status) : null,
+      note: row.note ? String(row.note) : null,
+      meta: (row.meta as AuditLog["meta"]) ?? undefined,
+      createdAt: str(row, "created_at"),
+    }));
+  }
+
+  async setPeriodStatus(
+    companyId: string,
+    periodId: string,
+    status: AccountingPeriodStatus,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase
+      .from("accounting_periods")
+      .update({ status })
+      .eq("id", periodId)
+      .eq("company_id", companyId);
+    if (error) return { ok: false, error: "تعذر تحديث حالة الفترة المالية." };
     return { ok: true };
   }
 

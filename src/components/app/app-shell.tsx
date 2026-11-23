@@ -6,6 +6,9 @@ import { useState } from "react";
 import {
   BookOpen,
   Bot,
+  CalendarRange,
+  ClipboardCheck,
+  History,
   Building2,
   ChevronDown,
   Copy,
@@ -55,6 +58,8 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: "/accounts", label: "دليل الحسابات", icon: BookOpen, permission: "accounts.read" },
       { href: "/trial-balance", label: "ميزان المراجعة", icon: Table2, permission: "reports.view" },
       { href: "/ledger", label: "دفتر الأستاذ", icon: Receipt, permission: "journal.read" },
+      { href: "/approvals", label: "مسارات الاعتماد", icon: ClipboardCheck, permission: "journal.read" },
+      { href: "/periods", label: "الفترات المالية", icon: CalendarRange, permission: "periods.read" },
     ],
   },
   {
@@ -79,6 +84,7 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: "/assistant", label: "المساعد الذكي", icon: Bot, permission: "reports.view" },
       { href: "/settings", label: "الإعدادات", icon: Settings, permission: "company.read" },
       { href: "/users", label: "المستخدمون والصلاحيات", icon: Users, permission: "company.members.read" },
+      { href: "/audit", label: "سجل التدقيق", icon: History, permission: "audit.view" },
     ],
   },
 ];

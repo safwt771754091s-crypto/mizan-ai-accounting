@@ -823,6 +823,7 @@ export async function buildDemoStore(): Promise<DemoStore> {
       { id: "m5", companyId: "co-nakheel", userId: "user-viewer", role: "viewer", createdAt: "2025-01-06T00:00:00.000Z" },
     ],
     roles: [],
+    audit: [],
     data,
     activity: [
       {

@@ -90,6 +90,13 @@ create policy accounts_write on public.accounts for all
 - `imported_records(batch_id)` و `(company_id, dataset)`.
 - `audit_findings(company_id, status)` و `(company_id, severity)`.
 
+## جداول الرقابة الداخلية (0005)
+
+- `audit_logs(id, company_id, user_id, action, entity, entity_id, from_status, to_status, note, meta, created_at)`
+  — إلحاقي فقط؛ قراءة بصلاحية `audit.view`، ولا تحديث ولا حذف.
+- `journal_entries` اكتسبت `submitted_by/at`, `approved_by/at`, `posted_by/at`, `rejected_by/at`, `review_note`.
+- فهرس `journal_entries(company_id, status)` لتسريع قائمة العمل.
+
 ## تطبيق الترحيلات
 
 عبر SQL Editor في Supabase بالترتيب، أو باستخدام Supabase CLI:

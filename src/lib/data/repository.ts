@@ -1,4 +1,4 @@
-import type { Ledger } from "@/lib/accounting/types";
+import type { AccountingPeriodStatus, JournalEntryStatus, Ledger } from "@/lib/accounting/types";
 import type { Permission } from "@/lib/auth/permission-catalog";
 import type { ImportBatchRecord } from "@/lib/import/types";
 import { dataMode } from "../supabase/config";
@@ -11,6 +11,7 @@ import type {
   Company,
   CompanyData,
   CompanyMember,
+  AuditLog,
   CompanyWithAccess,
   CustomRole,
   FindingState,
@@ -36,6 +37,7 @@ export interface Repository {
     companyId: string,
     userId: string,
     input: ImportSaveInput,
+    entryStatus?: "posted" | "submitted",
   ): Promise<{ batch: ImportBatchRecord; skipped: number; duplicate: boolean }>;
   setFindingStatus(
     companyId: string,
@@ -61,6 +63,31 @@ export interface Repository {
   /** الدور المخصص المعيّن للعضو، أو null إن كان يستخدم دوره النظامي. */
   getMemberCustomRole(userId: string, companyId: string): Promise<CustomRole | null>;
   setMemberCustomRole(companyId: string, memberId: string, roleId: string | null): Promise<{ ok: boolean; error?: string }>;
+  /** ينقل القيد بين حالات دورة الحياة ويضبط طوابع الوقت والمنفّذ. */
+  updateEntryStatus(
+    companyId: string,
+    entryId: string,
+    patch: { status: JournalEntryStatus; userId: string; note?: string | null; at?: string },
+  ): Promise<{ ok: boolean; error?: string }>;
+  appendAudit(
+    companyId: string,
+    userId: string,
+    input: {
+      action: string;
+      entity: string;
+      entityId?: string | null;
+      fromStatus?: string | null;
+      toStatus?: string | null;
+      note?: string | null;
+      meta?: Record<string, string | number | boolean | null>;
+    },
+  ): Promise<void>;
+  listAudit(companyId: string, limit?: number): Promise<AuditLog[]>;
+  setPeriodStatus(
+    companyId: string,
+    periodId: string,
+    status: AccountingPeriodStatus,
+  ): Promise<{ ok: boolean; error?: string }>;
   inviteMember(companyId: string, email: string, role: MemberRole): Promise<{ ok: boolean; error?: string }>;
   updateMemberRole(companyId: string, memberId: string, role: MemberRole): Promise<void>;
   removeMember(companyId: string, memberId: string): Promise<void>;
@@ -225,7 +252,7 @@ class DemoRepository implements Repository {
     };
   }
 
-  async saveImport(companyId: string, userId: string, input: ImportSaveInput) {
+  async saveImport(companyId: string, userId: string, input: ImportSaveInput, entryStatus: "posted" | "submitted" = "posted") {
     const access = await this.getCompanyAccess(userId, companyId);
     if (!access || !canWrite(access.role)) {
       throw new Error("لا تملك صلاحية استيراد البيانات لهذه الشركة.");
@@ -301,7 +328,10 @@ class DemoRepository implements Repository {
           description: draft.description,
           reference: draft.reference ?? null,
           source: input.batch.dataset,
-          status: "posted",
+          status: entryStatus,
+          createdBy: userId,
+          submittedBy: entryStatus === "submitted" ? userId : null,
+          submittedAt: entryStatus === "submitted" ? now : null,
           currency: access.company.currency,
           lines: draft.lines.map((line, index) => ({
             id: `${entryId}-l${index}`,
@@ -530,6 +560,88 @@ class DemoRepository implements Repository {
       if (target) target.customRoleId = roleId;
     });
     return { ok: true };
+  }
+
+  async updateEntryStatus(
+    companyId: string,
+    entryId: string,
+    patch: { status: JournalEntryStatus; userId: string; note?: string | null; at?: string },
+  ): Promise<{ ok: boolean; error?: string }> {
+    const at = patch.at ?? new Date().toISOString();
+    let found = false;
+    await mutateStore((store) => {
+      const entry = store.data[companyId]?.entries.find((item) => item.id === entryId);
+      if (!entry) return;
+      found = true;
+      entry.status = patch.status;
+      if (patch.status === "submitted") {
+        entry.submittedBy = patch.userId;
+        entry.submittedAt = at;
+      } else if (patch.status === "approved") {
+        entry.approvedBy = patch.userId;
+        entry.approvedAt = at;
+      } else if (patch.status === "rejected") {
+        entry.rejectedBy = patch.userId;
+        entry.rejectedAt = at;
+        entry.reviewNote = patch.note ?? null;
+      } else if (patch.status === "posted") {
+        entry.postedBy = patch.userId;
+        entry.postedAt = at;
+      }
+    });
+    return found ? { ok: true } : { ok: false, error: "القيد غير موجود في هذه الشركة." };
+  }
+
+  async appendAudit(
+    companyId: string,
+    userId: string,
+    input: {
+      action: string;
+      entity: string;
+      entityId?: string | null;
+      fromStatus?: string | null;
+      toStatus?: string | null;
+      note?: string | null;
+      meta?: Record<string, string | number | boolean | null>;
+    },
+  ): Promise<void> {
+    const row: AuditLog = {
+      id: `aud-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`,
+      companyId,
+      userId,
+      action: input.action,
+      entity: input.entity,
+      entityId: input.entityId ?? null,
+      fromStatus: input.fromStatus ?? null,
+      toStatus: input.toStatus ?? null,
+      note: input.note ?? null,
+      meta: input.meta,
+      createdAt: new Date().toISOString(),
+    };
+    await mutateStore((store) => {
+      store.audit.unshift(row);
+      if (store.audit.length > 5000) store.audit.length = 5000;
+    });
+  }
+
+  async listAudit(companyId: string, limit = 100): Promise<AuditLog[]> {
+    const store = await readStore();
+    return store.audit.filter((row) => row.companyId === companyId).slice(0, limit);
+  }
+
+  async setPeriodStatus(
+    companyId: string,
+    periodId: string,
+    status: AccountingPeriodStatus,
+  ): Promise<{ ok: boolean; error?: string }> {
+    let found = false;
+    await mutateStore((store) => {
+      const period = store.data[companyId]?.periods.find((item) => item.id === periodId);
+      if (!period) return;
+      found = true;
+      period.status = status;
+    });
+    return found ? { ok: true } : { ok: false, error: "الفترة المالية غير موجودة." };
   }
 
   async listUsers(): Promise<AppUser[]> {
