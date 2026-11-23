@@ -35,6 +35,9 @@ import type { Permission } from "@/lib/auth/permission-catalog";
 import type { CompanyWithAccess, MemberRole } from "@/lib/data/types";
 import type { AppUser } from "@/lib/data/types";
 import { signOutAction } from "@/app/actions/auth";
+import { InstallAppButton } from "@/components/pwa/install-button";
+import { purgeServiceWorkerCaches } from "@/lib/pwa/client";
+import { APP_VERSION } from "@/lib/pwa/version";
 
 interface NavItem {
   href: string;
@@ -204,7 +207,11 @@ export function AppShell({
             <p className="truncate text-[10px] text-white/45">{user.email}</p>
           </div>
         </div>
-        <form action={signOutAction}>
+        <div className="mb-2 space-y-2">
+          <InstallAppButton variant="sidebar" />
+          <p className="text-center text-[9px] text-white/30">الإصدار {APP_VERSION}</p>
+        </div>
+        <form action={signOutAction} onSubmit={() => purgeServiceWorkerCaches()}>
           <button
             type="submit"
             className="flex w-full items-center justify-center gap-2 rounded-lg px-2 py-2 text-[11px] font-semibold text-white/60 transition-colors hover:bg-white/5 hover:text-white"
