@@ -91,16 +91,17 @@ try {
   process.exit(1);
 }
 
+// جذر /rest/v1/ يتطلب مفتاحاً سرّياً بطبيعته، لذا نتحقق من المفتاح عبر إعدادات المصادقة.
 try {
-  const rest = await get("/rest/v1/");
-  if (rest.ok) {
-    ok("واجهة REST تعمل والمفتاح مقبول");
+  const settings = await get("/auth/v1/settings");
+  if (settings.ok) {
+    ok("المفتاح القابل للنشر مقبول");
   } else {
-    bad(`واجهة REST: HTTP ${rest.status} — راجع المفتاح`);
+    bad(`المفتاح مرفوض: HTTP ${settings.status}`);
     failures += 1;
   }
 } catch (error) {
-  bad(`تعذر قراءة REST: ${error.message}`);
+  bad(`تعذر التحقق من المفتاح: ${error.message}`);
   failures += 1;
 }
 
