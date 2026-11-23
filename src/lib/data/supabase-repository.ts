@@ -8,6 +8,7 @@ import type {
 import type { Permission } from "@/lib/auth/permission-catalog";
 import type { ImportBatchRecord } from "@/lib/import/types";
 import { createSupabaseServerClient } from "../supabase/server";
+import { buildChart } from "./demo-data";
 import type { Repository, CompanyAccess } from "./repository";
 import { canWrite } from "./types";
 import type {
@@ -220,6 +221,19 @@ class SupabaseRepository implements Repository {
       end_date: `${fiscalYearStart.slice(0, 4)}-12-31`,
       status: "open",
     });
+    // العضوية تُدرج أولاً لأن سياسة accounts_insert تعتمد على has_permission.
+    const { error: chartError } = await supabase.from("accounts").insert(
+      buildChart(company.id).map((account) => ({
+        company_id: company.id,
+        code: account.code,
+        name: account.name,
+        type: account.type,
+        subtype: account.subtype,
+        is_contra: account.isContra ?? false,
+        is_active: true,
+      })),
+    );
+    if (chartError) throw new Error("تعذر إنشاء دليل الحسابات الافتراضي.");
     return company;
   }
 

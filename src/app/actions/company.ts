@@ -8,6 +8,7 @@ import { assertCompanyPermission } from "@/lib/auth/permissions";
 import { isPermission } from "@/lib/auth/permission-catalog";
 import { getRepository } from "@/lib/data/repository";
 import type { MemberRole } from "@/lib/data/types";
+import { isNavigationError } from "@/lib/utils/navigation-error";
 import { companySchema, fieldErrors, memberSchema } from "@/lib/validation/schemas";
 
 export interface CompanyFormState {
@@ -54,7 +55,7 @@ export async function createCompanyAction(_prev: CompanyFormState, formData: For
     revalidatePath("/dashboard");
     redirect(`/companies/${company.id}?company=${company.id}`);
   } catch (error) {
-    if (error instanceof Error && error.message.includes("NEXT_REDIRECT")) throw error;
+    if (isNavigationError(error)) throw error;
     return { error: "تعذر إنشاء الشركة. تحقق من البيانات وحاول مرة أخرى." };
   }
 }
