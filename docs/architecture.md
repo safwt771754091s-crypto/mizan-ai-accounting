@@ -134,3 +134,10 @@ RAKAZ_DATA_MODE = demo | supabase
 - `src/lib/integrations/github-issues.ts`: بناء محتوى الـ Issue + عميل GitHub. التوكن يُقرأ من متغير بيئة
   على الخادم فقط، ولا يُعاد نص استجابة GitHub إلى الواجهة.
 - `/proposals` مع `ProposalCreateForm` و`ProposalActionForm`.
+
+## طبقة الصلاحيات في قاعدة البيانات (المرحلة 4)
+
+`has_permission(company_id, permission)` هي نقطة الحقيقة الواحدة في قاعدة البيانات، وتقرأ
+الدور النظامي أو الدور المخصص (`custom_role_id`) من نفس جداول `0004`. سياسات `0007` تُبنى عليها،
+فتتطابق قاعدة البيانات مع `assertCompanyPermission` في Server Actions، وأي صلاحية جديدة تُضاف
+إلى الكتالوج تسري في الطبقتين.

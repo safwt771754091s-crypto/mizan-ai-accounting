@@ -85,7 +85,9 @@ Supabase** (`RAKAZ_DATA_MODE=supabase` مع متغيرات Supabase وملفات
 
 1. أنشئ مشروعاً على <https://supabase.com>.
 2. نفّذ ملفات الترحيل بالترتيب في SQL Editor:
-   `supabase/migrations/0001_core.sql` ثم `0002_ledger.sql` ثم `0003_security.sql`.
+   `0001_core.sql` ثم `0002_ledger.sql` ثم `0003_security.sql` ثم `0004_rbac.sql` ثم
+  `0005_internal_controls.sql` ثم `0006_proposals.sql` ثم `0007_rls_permissions.sql`.
+  بعد الترحيل يمكن تشغيل اختبار العزل على القاعدة الحقيقية: `supabase/tests/rls_permissions.sql`.
 3. انسخ `.env.example` إلى `.env.local` واملأ:
 
 ```bash

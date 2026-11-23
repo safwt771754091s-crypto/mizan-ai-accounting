@@ -102,6 +102,12 @@ create policy accounts_write on public.accounts for all
 - `proposals(id, company_id, title, body, category, priority, status, created_by, created_at, updated_at, decision_note, issue_number, issue_url)`
   — قراءة بـ `proposals.view`، إلحاق بـ `proposals.create`، تحديث بـ `proposals.triage`، بلا حذف.
 
+## سياسات الصلاحيات (0007)
+
+`0007_rls_permissions.sql` يعيد بناء كل سياسات `0003` وقراءات `0004` على أساس `has_permission`
+بدل `has_company_role`، ويضيف `is_my_role()` لقراءة الدور المخصص الخاص بالعضو. التفاصيل والجدول
+الكامل في `docs/security.md`، والاختبار في `supabase/tests/rls_permissions.sql`.
+
 ## تطبيق الترحيلات
 
 عبر SQL Editor في Supabase بالترتيب، أو باستخدام Supabase CLI:

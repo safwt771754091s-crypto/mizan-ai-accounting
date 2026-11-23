@@ -24,6 +24,56 @@
 والتعديل تتطلب `owner/admin/accountant`؛ المراجعة تتطلب دوراً غير `viewer`؛ القراءة فقط
 متاحة للجميع.
 
+## 2.1 سياسات RLS القائمة على الصلاحيات (المرحلة 4)
+
+قبل الترحيل `0007_rls_permissions.sql` كانت سياسات `0003` تفحص الدور النظامي
+(`has_company_role`)، وهي تقرأ `company_members.role` فقط. النتيجة: عضو بدور مخصص كان
+إمّا يفقد وصوله في قاعدة البيانات أو يحتفظ بوصول دوره النظامي السابق، فيتعارض ما تسمح به
+قاعدة البيانات مع ما تسمح به الواجهة.
+
+بعد 0007 كل سياسة تقرأ من نفس كتالوج الصلاحيات المستخدم في الكود (`has_permission`).
+
+| الجدول | قراءة | كتابة |
+| --- | --- | --- |
+| `companies` | `company.read` (أو المُنشئ) | `company.settings.manage` |
+| `company_members` | صفّك دائماً + `company.members.read` للقائمة | `company.members.manage` |
+| `accounting_periods` | `periods.read` | `periods.close` / `periods.reopen` (بلا حذف) |
+| `accounts` | `accounts.read` | `accounts.manage` |
+| `journal_entries` | `journal.read` | `journal.create` / `edit_draft` / `submit` / `approve` / `post` / `reverse` |
+| `journal_entry_lines` | `journal.read` | `journal.create` / `journal.edit_draft` / `journal.submit` |
+| `uploaded_files` / `import_batches` / `imported_records` | `imports.read` | `imports.create` |
+| `audit_findings` | `findings.view` | `findings.review` |
+| `duplicate_findings` | `findings.view` | `findings.review` (باستثناء دور «مراجع») |
+| `financial_reports` / `analysis_results` | `reports.view` | `reports.export` |
+| `activity_logs` | `company.read` | `company.read` + `user_id = auth.uid()` |
+| `audit_logs` | `audit.view` | `company.read` + `user_id = auth.uid()` |
+| `proposals` | `proposals.view` | `proposals.create` / `proposals.triage` |
+| `roles` / `role_permissions` | `is_system` أو دورك المخصص أو `company.members.read` | `company.roles.manage` |
+| `user_roles` | دورك أو `company.members.read` | `company.members.manage` |
+| `storage.objects` (`company-files`) | `imports.read` | `imports.create` |
+
+### استثناءات مقصودة
+
+- **قراءة العضوية الذاتية:** كل عضو يقرأ صفّه في `company_members` دائماً، لأن التطبيق يبني منه
+  قائمة الشركات والصلاحيات. القائمة الكاملة تحتاج `company.members.read`.
+- **الدور المخصص الخاص بك:** `is_my_role(role_id)` تسمح بقراءة الدور والصلاحيات المسندة إليك
+  حتى لو لم تملك `company.members.read`، وإلا تعذّر بناء سياق عضو بدور مخصص.
+- **بلا حذف:** لا سياسة حذف على `accounting_periods` و`audit_findings` و`financial_reports`.
+  حذف القيود مقصور على `journal.reverse` (إلغاء محاسبي موثّق)، لا حذفاً فيزيائياً.
+- **`has_company_role` باقٍ في موضعين فقط** داخل سياسات الكتابة على `duplicate_findings`
+  للحفاظ على استثناء دور «مراجع» كما كان.
+
+### اختبار التكامل على قاعدة حقيقية
+
+```bash
+# في SQL Editor داخل Supabase، أو:
+psql "$SUPABASE_DB_URL" -f supabase/tests/rls_permissions.sql
+```
+
+السكربت ينشئ شركتين ومستخدمين وأدواراً تجريبية، يبدّل الهوية عبر `request.jwt.claims`،
+يتحقق من العزل ومن منع الكتابة ومن احترام الدور المخصص، ثم ينفّذ `rollback` (لا يترك أثراً).
+النتيجة المطلوبة: كل السطور `PASS` وسطر أخير `ALL RLS CHECKS PASSED`.
+
 ## 3. استيراد الملفات
 
 | الفحص | التفصيل |
