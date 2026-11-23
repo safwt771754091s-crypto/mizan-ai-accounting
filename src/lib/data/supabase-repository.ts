@@ -22,6 +22,10 @@ import type {
   FindingState,
   ImportSaveInput,
   MemberRole,
+  Proposal,
+  ProposalCategory,
+  ProposalPriority,
+  ProposalStatus,
 } from "./types";
 
 type Row = Record<string, unknown>;
@@ -810,6 +814,105 @@ class SupabaseRepository implements Repository {
       .eq("id", periodId)
       .eq("company_id", companyId);
     if (error) return { ok: false, error: "تعذر تحديث حالة الفترة المالية." };
+    return { ok: true };
+  }
+
+  async listProposals(companyId: string): Promise<Proposal[]> {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase
+      .from("proposals")
+      .select("*")
+      .eq("company_id", companyId)
+      .order("created_at", { ascending: false });
+    return ((data ?? []) as Row[]).map((row) => ({
+      id: str(row, "id"),
+      companyId: str(row, "company_id"),
+      title: str(row, "title"),
+      body: str(row, "body"),
+      category: str(row, "category", "other") as ProposalCategory,
+      priority: str(row, "priority", "medium") as ProposalPriority,
+      status: str(row, "status", "new") as ProposalStatus,
+      createdBy: str(row, "created_by"),
+      createdAt: str(row, "created_at"),
+      updatedAt: str(row, "updated_at", str(row, "created_at")),
+      decisionNote: row.decision_note ? str(row, "decision_note") : null,
+      issueNumber: row.issue_number === null || row.issue_number === undefined ? null : Number(row.issue_number),
+      issueUrl: row.issue_url ? str(row, "issue_url") : null,
+    }));
+  }
+
+  async createProposal(
+    companyId: string,
+    userId: string,
+    input: { title: string; body: string; category: ProposalCategory; priority: ProposalPriority },
+  ): Promise<Proposal> {
+    const supabase = await createSupabaseServerClient();
+    const now = new Date().toISOString();
+    const { data, error } = await supabase
+      .from("proposals")
+      .insert({
+        company_id: companyId,
+        title: input.title,
+        body: input.body,
+        category: input.category,
+        priority: input.priority,
+        status: "new",
+        created_by: userId,
+        created_at: now,
+        updated_at: now,
+      })
+      .select("*")
+      .single();
+    if (error || !data) throw new Error("تعذر حفظ المقترح.");
+    const row = data as Row;
+    return {
+      id: str(row, "id"),
+      companyId,
+      title: input.title,
+      body: input.body,
+      category: input.category,
+      priority: input.priority,
+      status: "new",
+      createdBy: userId,
+      createdAt: str(row, "created_at", now),
+      updatedAt: str(row, "updated_at", now),
+      decisionNote: null,
+      issueNumber: null,
+      issueUrl: null,
+    };
+  }
+
+  async setProposalStatus(
+    companyId: string,
+    proposalId: string,
+    status: ProposalStatus,
+    _userId: string,
+    note?: string | null,
+  ): Promise<{ ok: boolean; error?: string }> {
+    const supabase = await createSupabaseServerClient();
+    const patch: Record<string, unknown> = { status, updated_at: new Date().toISOString() };
+    if (note !== undefined) patch.decision_note = note;
+    const { error } = await supabase
+      .from("proposals")
+      .update(patch)
+      .eq("id", proposalId)
+      .eq("company_id", companyId);
+    if (error) return { ok: false, error: "تعذر تحديث حالة المقترح." };
+    return { ok: true };
+  }
+
+  async attachProposalIssue(
+    companyId: string,
+    proposalId: string,
+    issue: { number: number; url: string },
+  ): Promise<{ ok: boolean; error?: string }> {
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase
+      .from("proposals")
+      .update({ issue_number: issue.number, issue_url: issue.url, updated_at: new Date().toISOString() })
+      .eq("id", proposalId)
+      .eq("company_id", companyId);
+    if (error) return { ok: false, error: "تعذر ربط المقترح بـ Issue." };
     return { ok: true };
   }
 

@@ -126,3 +126,18 @@ RAKAZ_DATA_MODE = demo | supabase
 - `src/app/actions/journal.ts`: Server Actions لكل انتقال مع `assertCompanyPermission` ثم `checkTransition` ثم التحديث ثم `appendAudit`.
 - `src/app/api/import/confirm/route.ts`: يحدد حالة القيود المستوردة بحسب صلاحية الترحيل ويرفض الفترات المغلقة.
 - الواجهات: `/approvals`, `/periods`, `/audit` مع مكوّن عميل واحد مشترك `JournalActionForm`.
+
+## طبقة المقترحات (المرحلة 3)
+
+- `src/lib/proposals/rules.ts`: آلة حالات المقترح وشروط الإرسال إلى GitHub (دوال نقية).
+- `src/app/actions/proposals.ts`: تقديم، فرز، وإرسال — كلها Server Actions محمية بالصلاحيات وتكتب في `audit_logs`.
+- `src/lib/integrations/github-issues.ts`: بناء محتوى الـ Issue + عميل GitHub. التوكن يُقرأ من متغير بيئة
+  على الخادم فقط، ولا يُعاد نص استجابة GitHub إلى الواجهة.
+- `/proposals` مع `ProposalCreateForm` و`ProposalActionForm`.
+
+## طبقة الصلاحيات في قاعدة البيانات (المرحلة 4)
+
+`has_permission(company_id, permission)` هي نقطة الحقيقة الواحدة في قاعدة البيانات، وتقرأ
+الدور النظامي أو الدور المخصص (`custom_role_id`) من نفس جداول `0004`. سياسات `0007` تُبنى عليها،
+فتتطابق قاعدة البيانات مع `assertCompanyPermission` في Server Actions، وأي صلاحية جديدة تُضاف
+إلى الكتالوج تسري في الطبقتين.
