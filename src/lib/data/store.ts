@@ -74,6 +74,7 @@ async function load(): Promise<DemoStore> {
       if (parsed?.version === 1) {
         // ملفات قديمة قد تسبق إضافة الأدوار المخصصة — نطبّع الحقول الجديدة.
         if (!Array.isArray(parsed.roles)) parsed.roles = [];
+        if (!Array.isArray(parsed.audit)) parsed.audit = [];
         for (const member of parsed.members) {
           if (member.customRoleId === undefined) member.customRoleId = null;
         }

@@ -11,6 +11,28 @@ import { detectFileKind, sha256, validateFileSignature } from "@/lib/import/chec
 import { ALLOWED_EXTENSIONS, MAX_UPLOAD_BYTES } from "@/lib/supabase/config";
 import { importConfirmSchema } from "@/lib/validation/schemas";
 import type { ImportDataset } from "@/lib/import/types";
+import type { AccountingPeriod } from "@/lib/accounting/types";
+import { periodStatusForDate } from "@/lib/accounting/workflow";
+import type { Repository } from "@/lib/data/repository";
+
+async function closedPeriodFor(
+  repo: Repository,
+  companyId: string,
+  dates: string[],
+): Promise<AccountingPeriod | null> {
+  if (dates.length === 0) return null;
+  const data = await repo.getCompanyData(companyId);
+  const periods = data.periods as AccountingPeriod[];
+  for (const date of dates) {
+    const status = periodStatusForDate(periods, date);
+    if (status === "closed" || status === "locked") {
+      const day = date.slice(0, 10);
+      const period = periods.find((item) => day >= item.startDate.slice(0, 10) && day <= item.endDate.slice(0, 10));
+      if (period) return period;
+    }
+  }
+  return null;
+}
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
@@ -151,6 +173,22 @@ export async function POST(request: Request) {
     const errorCount = plan.issues.filter((issue) => issue.level === "error").length;
     const warningCount = plan.issues.filter((issue) => issue.level === "warning").length + warnings.length;
 
+    // رقابة: من لا يملك صلاحية الترحيل لا يستطيع إدخال قيود تؤثر على الأرصدة مباشرة؛
+    // تُحفظ قيوده كـ«بانتظار الاعتماد» ليعتمدها من يملك journal.approve.
+    const canPost = gate.state.allows("journal.post");
+    const entryStatus: "posted" | "submitted" = canPost ? "posted" : "submitted";
+
+    const closed = await closedPeriodFor(repo, input.companyId, plan.entries.map((entry) => entry.date));
+    if (closed) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: `لا يمكن الاستيراد في فترة ${closed.status === "locked" ? "مقفلة" : "مغلقة"} (${closed.name}). أعد فتح الفترة أو غيّر تواريخ القيود.`,
+        },
+        { status: 409 },
+      );
+    }
+
     const result = await repo.saveImport(input.companyId, user.id, {
       batch: {
         fileName: file.name,
@@ -172,7 +210,7 @@ export async function POST(request: Request) {
       accounts: plan.accounts,
       entries: plan.entries,
       records: plan.records,
-    });
+    }, entryStatus);
 
     return NextResponse.json({
       ok: true,

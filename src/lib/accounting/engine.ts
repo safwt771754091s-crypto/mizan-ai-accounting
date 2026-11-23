@@ -107,7 +107,8 @@ export function filterEntries(entries: JournalEntry[], options: EntryFilterOptio
   const { from, to, includeDraft = false, includeVoid = false } = options;
   return entries.filter((entry) => {
     if (!includeVoid && entry.status === "void") return false;
-    if (!includeDraft && entry.status === "draft") return false;
+    // القوائم والأرصدة تعتمد على المرحّل فقط؛ المسودة والمرسل والمعتمد لا تُحتسب.
+    if (!includeDraft && entry.status !== "posted") return false;
     const day = entry.date?.slice(0, 10);
     if (!day) return false;
     if (from && day < from) return false;

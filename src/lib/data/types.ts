@@ -54,6 +54,21 @@ export interface Company {
   createdBy: string;
 }
 
+/** سطر تدقيق غير قابل للتعديل: من فعل ماذا ومتى وعلى أي كيان. */
+export interface AuditLog {
+  id: string;
+  companyId: string;
+  userId: string;
+  action: string;
+  entity: string;
+  entityId: string | null;
+  fromStatus?: string | null;
+  toStatus?: string | null;
+  note?: string | null;
+  meta?: Record<string, string | number | boolean | null>;
+  createdAt: string;
+}
+
 export interface CompanyMember {
   id: string;
   companyId: string;
@@ -115,6 +130,7 @@ export interface DemoStore {
   companies: Company[];
   members: CompanyMember[];
   roles: CustomRole[];
+  audit: AuditLog[];
   data: Record<string, CompanyData>;
   activity: ActivityLog[];
 }

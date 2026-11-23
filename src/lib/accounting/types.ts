@@ -50,7 +50,12 @@ export interface Account {
   currency?: string;
 }
 
-export type JournalEntryStatus = "draft" | "posted" | "void";
+/**
+ * دورة حياة القيد: مسودة → مرسل → معتمد → مرحّل.
+ * "rejected" يعيد القيد لصاحبه مع ملاحظة، و"void" للإلغاء بعد الترحيل.
+ * القوائم المالية تعتمد على "posted" فقط.
+ */
+export type JournalEntryStatus = "draft" | "submitted" | "approved" | "rejected" | "posted" | "void";
 
 export interface JournalEntryLine {
   id?: string;
@@ -79,6 +84,16 @@ export interface JournalEntry {
   exchangeRate?: string | number;
   periodId?: string | null;
   createdAt?: string;
+  createdBy?: string | null;
+  submittedBy?: string | null;
+  submittedAt?: string | null;
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  postedBy?: string | null;
+  postedAt?: string | null;
+  rejectedBy?: string | null;
+  rejectedAt?: string | null;
+  reviewNote?: string | null;
   lines: JournalEntryLine[];
 }
 
@@ -90,6 +105,8 @@ export interface AccountingPeriod {
   endDate: string;
   status: "open" | "closed" | "locked";
 }
+
+export type AccountingPeriodStatus = AccountingPeriod["status"];
 
 export interface Ledger {
   accounts: Account[];
