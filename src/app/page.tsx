@@ -19,6 +19,7 @@ import {
   Upload,
 } from "lucide-react";
 import { getCurrentUser } from "@/lib/auth";
+import { InstallAppButton } from "@/components/pwa/install-button";
 import { isAiConfigured, dataMode } from "@/lib/supabase/config";
 import { buildDemoCompanies, buildDemoData } from "@/lib/data/demo-data";
 import { buildBalanceSheet, buildIncomeStatement } from "@/lib/accounting/statements";
@@ -181,6 +182,9 @@ export default async function LandingPage() {
           </nav>
 
           <div className="flex shrink-0 items-center gap-2">
+            <div className="hidden sm:block">
+              <InstallAppButton variant="landing" />
+            </div>
             {user ? (
               <Link
                 href="/dashboard"

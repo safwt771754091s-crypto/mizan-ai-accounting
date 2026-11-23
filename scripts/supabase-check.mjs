@@ -84,7 +84,8 @@ async function get(pathname) {
 
 try {
   const health = await get("/auth/v1/health");
-  health.ok ? ok("خدمة المصادقة تستجيب") : bad(`خدمة المصادقة: HTTP ${health.status}`);
+  if (health.ok) ok("خدمة المصادقة تستجيب");
+  else bad(`خدمة المصادقة: HTTP ${health.status}`);
   if (!health.ok) failures += 1;
 } catch (error) {
   bad(`تعذر الوصول إلى ${host}: ${error.message}`);
