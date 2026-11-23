@@ -124,6 +124,27 @@ export interface CompanyWithAccess extends Company {
   entryCount: number;
 }
 
+export type ProposalCategory = "workflow" | "report" | "import" | "ux" | "other";
+export type ProposalPriority = "low" | "medium" | "high";
+export type ProposalStatus = "new" | "under_review" | "accepted" | "rejected" | "shipped";
+
+/** مقترح تطوير مقدَّم من عضو شركة، ويمكن تحويله إلى Issue على GitHub. */
+export interface Proposal {
+  id: string;
+  companyId: string;
+  title: string;
+  body: string;
+  category: ProposalCategory;
+  priority: ProposalPriority;
+  status: ProposalStatus;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+  decisionNote: string | null;
+  issueNumber: number | null;
+  issueUrl: string | null;
+}
+
 export interface DemoStore {
   version: number;
   users: Array<AppUser & { passwordHash: string }>;
@@ -131,6 +152,7 @@ export interface DemoStore {
   members: CompanyMember[];
   roles: CustomRole[];
   audit: AuditLog[];
+  proposals: Proposal[];
   data: Record<string, CompanyData>;
   activity: ActivityLog[];
 }

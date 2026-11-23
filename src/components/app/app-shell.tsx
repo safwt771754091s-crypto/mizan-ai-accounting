@@ -9,6 +9,7 @@ import {
   CalendarRange,
   ClipboardCheck,
   History,
+  Lightbulb,
   Building2,
   ChevronDown,
   Copy,
@@ -85,6 +86,7 @@ const SECTIONS: Array<{ title: string; items: NavItem[] }> = [
       { href: "/settings", label: "الإعدادات", icon: Settings, permission: "company.read" },
       { href: "/users", label: "المستخدمون والصلاحيات", icon: Users, permission: "company.members.read" },
       { href: "/audit", label: "سجل التدقيق", icon: History, permission: "audit.view" },
+      { href: "/proposals", label: "مركز المقترحات", icon: Lightbulb, permission: "proposals.view" },
     ],
   },
 ];
