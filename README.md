@@ -154,6 +154,7 @@ npm run ai:check
 | `npm run test:e2e` | اختبارات Playwright (تشغّل خادماً على المنفذ 3100) |
 | `npm run db:seed` | إعادة بناء البيانات التجريبية |
 | `npm run icons:pwa` | إعادة توليد أيقونات PWA من هوية ركاز |
+| `npm run assets:play` | توليد أيقونة Play ورسم الميزة |
 
 قبل تشغيل E2E لأول مرة:
 
@@ -250,6 +251,7 @@ docs/                     التوثيق التفصيلي
 - [المساعد الذكي وإعداد المزود](docs/ai.md)
 - [تطبيق الهاتف PWA والتحديثات](docs/pwa.md)
 - [جاهزية Android وتقييم Capacitor/TWA](docs/android-readiness.md)
+- [بناء تطبيق Android عبر TWA](docs/android-twa.md)
 - [خطة التطوير](docs/roadmap.md)
 
 ---
@@ -262,6 +264,7 @@ docs/                     التوثيق التفصيلي
   عند نقص البيانات.
 - لا يوجد Offline Accounting: التطبيق المثبّت يحتاج اتصالاً لكل عملية محاسبية، ويعرض صفحة
   عدم اتصال واضحة بدلاً من أي بيانات قديمة.
-- لا يوجد تطبيق Android أصلي (APK) بعد — راجع `docs/android-readiness.md`.
+- لا يوجد تطبيق Android أصلي (APK) بعد — إعداد TWA جاهز في `android/twa-manifest.json`،
+  والبناء يحتاج JDK وAndroid SDK ومفتاح توقيع تملكه أنت (`docs/android-twa.md`).
 - وضع Demo يخزّن البيانات في ملف JSON محلي (أو في `$TMPDIR` على منصات الاستضافة)،
   وهو للتجربة والعرض وليس للإنتاج: البيانات مؤقتة ولا تُشارك بين نسخ الخادم.

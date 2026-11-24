@@ -1,6 +1,7 @@
 # جاهزية Android — تقييم الخيارات
 
-هذه الوثيقة **تقييم معماري فقط**. لم يُنشأ مشروع Android ولا APK في هذه المرحلة.
+هذه الوثيقة **تقييم معماري**. المرحلة التالية المنفّذة جزئياً هي TWA — التفاصيل وخطوات البناء
+الكاملة في [`android-twa.md`](./android-twa.md). لم يُنشأ مشروع Android ولا APK.
 
 ## 1. واقع البنية الحالية
 
@@ -59,14 +60,16 @@ WebView أصلي يحمّل `https://mizan-ai-accounting.vercel.app`.
 | HTTPS ودومين ثابت | ✅ Vercel |
 | Manifest + أيقونات 512 | ✅ |
 | `site_url` و`redirect URLs` في Supabase | ✅ مضبوطة على دومين الإنتاج |
-| `/.well-known/assetlinks.json` (TWA) | ❌ غير موجود — يُضاف عند تنفيذ TWA |
+| `/.well-known/assetlinks.json` (TWA) | ✅ جاهز — يقرأ البصمة من `ANDROID_SHA256_CERT_FINGERPRINTS` |
 | Deep links (`rakaz://`) | ❌ يحتاج تسجيل مخطط + تحديث `redirect URLs` |
+| إعداد TWA (`android/twa-manifest.json`) | ✅ جاهز للتوليد بـ Bubblewrap |
+| أصول Play (أيقونة + رسم الميزة) | ✅ في `play-store/` |
 | سياسة خصوصية منشورة | ❌ مطلوبة لمتجر Play |
 | اختبار مصادقة داخل WebView | ❌ لم يُجرَ |
 
 ## 5. ما لم يُنفذ في هذه المرحلة (مقصود)
 
-- لا مشروع Android، لا APK، لا AAB، لا توقيع.
-- لا Bubblewrap ولا Capacitor في التبعيات.
-- لا `assetlinks.json`.
+- لا مشروع Android، لا APK، لا AAB، لا توقيع (يحتاج JDK + SDK + مفتاح المستخدم).
+- لا Bubblewrap ولا Capacitor في التبعيات — الأدوات تُثبَّت على جهاز البناء فقط.
 - لا إشعارات Push.
+- لا لقطات شاشة لمتجر Play (تُؤخذ من التطبيق الفعلي بعد النشر).
