@@ -41,7 +41,10 @@ describe("إعداد TWA متوافق مع الويب", () => {
   });
 
   it("يحمل إصدار التطبيق الحالي ورقم بناء صحيحاً", () => {
-    expect(twa.appVersionName).toBe(APP_VERSION);
+    // Bubblewrap يقرأ الإصدار من المفتاح appVersion؛ وجود appVersionName بدلاً منه
+    // يُنتج مشروع Android بإصدار فارغ، لذا نمنع المفتاح الخاطئ صراحةً.
+    expect(twa.appVersion).toBe(APP_VERSION);
+    expect(twa.appVersionName).toBeUndefined();
     expect(Number.isInteger(twa.appVersionCode)).toBe(true);
     expect(twa.appVersionCode).toBeGreaterThan(0);
   });

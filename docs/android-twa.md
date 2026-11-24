@@ -51,6 +51,7 @@ npm i -g @bubblewrap/cli
 ### ب. إنشاء مفتاح التوقيع — لا ترفعه إلى Git أبداً
 
 ```bash
+cd android   # لأن signingKey.path في twa-manifest.json هو ./android.keystore
 keytool -genkeypair -v \
   -keystore android.keystore -alias android \
   -keyalg RSA -keysize 2048 -validity 10000 \
@@ -58,13 +59,23 @@ keytool -genkeypair -v \
 ```
 
 احفظ الملف وكلمة مروره في مكان آمن (خسارته تعني عدم القدرة على تحديث التطبيق على Play).
+المسار `android/android.keystore` مُستثنى من Git عبر `*.keystore`.
 
-### ج. توليد مشروع Android
+### ج. توليد مشروع Android ثم بناؤه
 
 ```bash
-bubblewrap init --manifest android/twa-manifest.json
-bubblewrap build          # ينتج app-release-signed.apk و app-release-bundle.aab
+cd android
+bubblewrap update --manifest=twa-manifest.json   # يولّد مشروع Android في ./app من إعدادنا
+bubblewrap build  --manifest=twa-manifest.json   # يوقّع وينتج app-release-signed.apk و app-release-bundle.aab
 ```
+
+- `--manifest` يتوقع **مسار ملف** `twa-manifest.json`، لا رابط Web Manifest ولا مجلداً.
+  هذا سلوك الـ CLI نفسه (`TwaManifest.fromFile(manifestFile)`) وليس اجتهاداً.
+- `bubblewrap init` غير مناسب هنا: خيار `--manifest` فيه يتوقع **رابط Web Manifest**
+  (`https://…/manifest.webmanifest`) ويولّد إعداداً جديداً بدل إعدادنا الجاهز.
+- مجلد الإخراج يحدده `--directory` (افتراضياً مجلد التشغيل الحالي)، و`android/app/` مُستثنى من Git.
+- `build` يطلب كلمة مرور المفتاح تفاعلياً؛ في بيئة CI تُمرَّر عبر
+  `BUBBLEWRAP_KEYSTORE_PASSWORD` و`BUBBLEWRAP_KEY_PASSWORD`.
 
 ### د. استخراج البصمة وإضافتها إلى البيئة
 
@@ -108,9 +119,10 @@ adb install app-release-signed.apk
 ## 5. عند إصدار نسخة جديدة
 
 1. ارفع `APP_VERSION` و`CACHE_VERSION` (انظر `docs/pwa.md §6`).
-2. ارفع `appVersionName` و`appVersionCode` في `android/twa-manifest.json`
+2. ارفع `appVersion` و`appVersionCode` في `android/twa-manifest.json`
    (`appVersionCode` يجب أن يزيد دائماً، والاختبار يتحقق من صحته).
-3. `bubblewrap update && bubblewrap build` ثم ارفع AAB جديداً.
+3. `cd android && bubblewrap update --manifest=twa-manifest.json && bubblewrap build --manifest=twa-manifest.json`
+   ثم ارفع AAB جديداً.
 4. محتوى الويب يتحدث تلقائياً مع النشر؛ الغلاف الأصلي يتحدث فقط عند تغيير يحتاج صلاحية جديدة.
 
 ## 6. القيود المعروفة
