@@ -6,6 +6,10 @@ const nextConfig: NextConfig = {
   experimental: {
     optimizePackageImports: ["lucide-react", "recharts"],
   },
+  async rewrites() {
+    // Google يقرأ الملف من مسار ثابت؛ نخدمه من route handler حتى تُقرأ البصمة من متغير بيئة.
+    return [{ source: "/.well-known/assetlinks.json", destination: "/api/well-known/assetlinks" }];
+  },
   async headers() {
     return [
       {

@@ -18,3 +18,13 @@ next-env.d.ts
 .mizan-data/
 .rakaz-data/
 .openhands/
+
+# Android / TWA — مفاتيح التوقيع ونتائج البناء لا تُرفع أبداً
+*.keystore
+*.jks
+android.keystore
+android/app/
+android/.gradle/
+android/**/build/
+*.aab
+*.apk
